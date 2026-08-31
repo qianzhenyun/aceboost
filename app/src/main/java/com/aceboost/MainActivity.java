@@ -14,53 +14,62 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sp = getSharedPreferences("aceboost_prefs", MODE_WORLD_READABLE);
+        try {
+            sp = getSharedPreferences("aceboost_prefs", MODE_PRIVATE);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(Color.parseColor("#0D1117"));
-        root.setPadding(28, 56, 28, 40);
+            LinearLayout root = new LinearLayout(this);
+            root.setOrientation(LinearLayout.VERTICAL);
+            root.setBackgroundColor(Color.parseColor("#0D1117"));
+            root.setPadding(28, 56, 28, 40);
 
-        TextView title = new TextView(this);
-        title.setText("AceBoost");
-        title.setTextColor(Color.parseColor("#FFD866"));
-        title.setTextSize(30);
-        title.setPadding(0, 0, 0, 8);
-        root.addView(title);
+            TextView title = new TextView(this);
+            title.setText("AceBoost");
+            title.setTextColor(Color.parseColor("#FFD866"));
+            title.setTextSize(30);
+            title.setPadding(0, 0, 0, 8);
+            root.addView(title);
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("一加 Ace3V 增强模块 · LSPosed");
-        subtitle.setTextColor(Color.parseColor("#8B949E"));
-        subtitle.setTextSize(14);
-        subtitle.setPadding(0, 0, 0, 28);
-        root.addView(subtitle);
+            TextView subtitle = new TextView(this);
+            subtitle.setText("一加 Ace3V 增强模块 · LSPosed");
+            subtitle.setTextColor(Color.parseColor("#8B949E"));
+            subtitle.setTextSize(14);
+            subtitle.setPadding(0, 0, 0, 28);
+            root.addView(subtitle);
 
-        addToggle(root, "音量增强", "音量键步进 + 最大音量上限", "vol_enable", true);
-        addSeek(root, "音量步数", 30, 100, "vol_steps", 60);
-        addSeek(root, "最大音量上限", 150, 255, "vol_max", 201);
+            addToggle(root, "音量增强", "音量键步进 + 最大音量上限", "vol_enable", true);
+            addSeek(root, "音量步数", 30, 100, "vol_steps", 60);
+            addSeek(root, "最大音量上限", 150, 255, "vol_max", 201);
 
-        addToggle(root, "音频采样率优化", "目标采样率 192000Hz", "audio_enable", true);
-        addToggle(root, "马达增强", "振动强度提升", "vibrate_enable", true);
-        addSeek(root, "振动强度 (%)", 100, 200, "vibrate_level", 160);
+            addToggle(root, "音频采样率优化", "目标采样率 192000Hz", "audio_enable", true);
+            addToggle(root, "马达增强", "振动强度提升", "vibrate_enable", true);
+            addSeek(root, "振动强度 (%)", 100, 200, "vibrate_level", 160);
 
-        addToggle(root, "全屏防烧屏", "所有界面像素级微移，保护 OLED", "burnin_enable", true);
-        addToggle(root, "状态栏时钟颜色", "时间 / 电量 / 信号颜色渐变", "color_enable", true);
-        addColorPicker(root);
+            addToggle(root, "全屏防烧屏", "所有界面像素级微移，保护 OLED", "burnin_enable", true);
+            addToggle(root, "状态栏时钟颜色", "时间 / 电量 / 信号颜色渐变", "color_enable", true);
+            addColorPicker(root);
 
-        addToggle(root, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
-        addToggle(root, "验证码自动填入", "自动填入验证码输入框", "sms_fill", false);
-        addToggle(root, "隐藏 Xposed/Root", "基础防检测", "hide_enable", true);
+            addToggle(root, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
+            addToggle(root, "验证码自动填入", "自动填入验证码输入框", "sms_fill", false);
+            addToggle(root, "隐藏 Xposed/Root", "基础防检测", "hide_enable", true);
 
-        TextView note = new TextView(this);
-        note.setText("\n请在 LSPosed 作用域中勾选：\n系统框架、SystemUI、电话、短信\n设置保存后重启设备生效");
-        note.setTextColor(Color.parseColor("#FF7B72"));
-        note.setTextSize(13);
-        note.setPadding(0, 28, 0, 0);
-        root.addView(note);
+            TextView note = new TextView(this);
+            note.setText("\n请在 LSPosed 作用域中勾选：\n系统框架、SystemUI、电话、短信\n设置保存后重启设备生效");
+            note.setTextColor(Color.parseColor("#FF7B72"));
+            note.setTextSize(13);
+            note.setPadding(0, 28, 0, 0);
+            root.addView(note);
 
-        ScrollView scroll = new ScrollView(this);
-        scroll.addView(root);
-        setContentView(scroll);
+            ScrollView scroll = new ScrollView(this);
+            scroll.addView(root);
+            setContentView(scroll);
+        } catch (Throwable t) {
+            TextView err = new TextView(this);
+            err.setText("界面加载失败：" + t);
+            err.setTextColor(Color.WHITE);
+            err.setTextSize(14);
+            err.setPadding(32, 32, 32, 32);
+            setContentView(err);
+        }
     }
 
     private LinearLayout makeCard() {
@@ -134,9 +143,6 @@ public class MainActivity extends Activity {
 
         String[] colors = {"金色", "玫瑰金", "冰蓝", "青绿", "紫色"};
         String[] hex = {"#FFD866", "#F7B7C5", "#7FD4FF", "#6FE3C1", "#C9A6FF"};
-        String cur = sp.getString("status_color", "#FFD866");
-        int idx = 0;
-        for (int i = 0; i < hex.length; i++) if (hex[i].equals(cur)) idx = i;
 
         HorizontalScrollView hsv = new HorizontalScrollView(this);
         LinearLayout row = new LinearLayout(this);
