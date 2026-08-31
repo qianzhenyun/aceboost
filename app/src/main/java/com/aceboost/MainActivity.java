@@ -2,15 +2,11 @@ package com.aceboost;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.widget.*;
-
-import java.util.List;
 
 public class MainActivity extends Activity {
     private SharedPreferences sp;
@@ -27,7 +23,7 @@ public class MainActivity extends Activity {
 
             LinearLayout root = new LinearLayout(this);
             root.setOrientation(LinearLayout.VERTICAL);
-            root.setBackground(getGlassBackground());
+            root.setBackgroundColor(Color.parseColor("#0B0F14"));
 
             contentArea = new FrameLayout(this);
             contentArea.setLayoutParams(new LinearLayout.LayoutParams(
@@ -37,7 +33,10 @@ public class MainActivity extends Activity {
             navBar = new LinearLayout(this);
             navBar.setOrientation(LinearLayout.HORIZONTAL);
             navBar.setPadding(8, 10, 8, 16);
-            navBar.setBackground(getNavBackground());
+            GradientDrawable navBg = new GradientDrawable();
+            navBg.setColor(Color.argb(170, 30, 40, 55));
+            navBg.setCornerRadius(24);
+            navBar.setBackground(navBg);
             root.addView(navBar);
 
             tabStatus = createTab("状态栏", 0);
@@ -94,20 +93,6 @@ public class MainActivity extends Activity {
         tabSettings.setTextColor(currentTab == 4 ? Color.WHITE : Color.parseColor("#8899AA"));
     }
 
-    private GradientDrawable getGlassBackground() {
-        GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.argb(120, 20, 24, 34));
-        gd.setCornerRadius(28);
-        return gd;
-    }
-
-    private GradientDrawable getNavBackground() {
-        GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.argb(170, 12, 16, 24));
-        gd.setCornerRadius(24);
-        return gd;
-    }
-
     private void buildStatusPage() {
         LinearLayout page = basePage("状态栏");
         addToggleRow(page, "彩虹渐变", "状态栏时间与图标使用彩虹色", "rainbow_enable", true);
@@ -129,10 +114,10 @@ public class MainActivity extends Activity {
 
     private void buildDisplayPage() {
         LinearLayout page = basePage("显示");
-        addToggleRow(page, "液态玻璃", "应用界面磨砂玻璃背景", "glass_enable", true);
+        addToggleRow(page, "导航栏液态玻璃", "底部导航栏磨砂玻璃效果", "glass_enable", true);
         addToggleRow(page, "全屏防烧屏", "像素级微移，保护 OLED", "burnin_enable", true);
-        addActionRow(page, "手机软件", "对第三方应用启用液态玻璃");
-        addActionRow(page, "本机应用", "对系统应用启用液态玻璃");
+        addActionRow(page, "手机软件", "对第三方应用启用液态玻璃", () -> toast("手机软件页面待扩展"));
+        addActionRow(page, "本机应用", "对系统应用启用液态玻璃", () -> toast("本机应用页面待扩展"));
         contentArea.addView(page);
     }
 
@@ -146,8 +131,8 @@ public class MainActivity extends Activity {
 
     private void buildSettingsPage() {
         LinearLayout page = basePage("设置");
-        addActionRow(page, "软重启 Zygote", "快速重新加载模块");
-        addActionRow(page, "重启 SystemUI", "重新加载状态栏");
+        addActionRow(page, "软重启 Zygote", "快速重新加载模块", () -> execRoot("setprop ctl.restart zygote"));
+        addActionRow(page, "重启 SystemUI", "重新加载状态栏", () -> execRoot("pkill -f com.android.systemui"));
         contentArea.addView(page);
     }
 
@@ -210,7 +195,7 @@ public class MainActivity extends Activity {
         parent.addView(row);
     }
 
-    private void addActionRow(LinearLayout parent, String label, String desc) {
+    private void addActionRow(LinearLayout parent, String label, String desc, Runnable action) {
         LinearLayout row = glassRow();
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -231,6 +216,9 @@ public class MainActivity extends Activity {
         arrow.setTextSize(16);
         arrow.setTextColor(Color.parseColor("#8899AA"));
         row.addView(arrow);
+        row.setOnClickListener(v -> {
+            if (action != null) action.run();
+        });
         parent.addView(row);
     }
 
@@ -247,5 +235,21 @@ public class MainActivity extends Activity {
         lp.setMargins(0, 0, 0, 10);
         row.setLayoutParams(lp);
         return row;
+    }
+
+    private void toast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private void execRoot(String cmd) {
+        new Thread(() -> {
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
+                p.waitFor();
+                runOnUiThread(() -> toast("执行完成"));
+            } catch (Throwable t) {
+                runOnUiThread(() -> toast("执行失败：" + t.getMessage()));
+            }
+        }).start();
     }
 }
