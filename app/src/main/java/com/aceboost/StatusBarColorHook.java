@@ -1,8 +1,8 @@
 package com.aceboost;
 
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.widget.TextView;
+
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -11,39 +11,32 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import java.lang.reflect.Method;
 
 public class StatusBarColorHook {
-    private static String colorHex = "#FFD866";
-    private static int alpha = 255;
-    private static boolean enabled = true;
-    private static boolean applyAlpha = true;
+    private static boolean rainbowEnabled = true;
+    private static boolean breathEnabled = false;
+    private static boolean goldEnabled = false;
 
     public static void hook(final XC_LoadPackage.LoadPackageParam lp) {
         try {
-            enabled = PrefsReader.getBool("color_enable", true);
-            colorHex = PrefsReader.getString("status_color", "#FFD866");
-            alpha = PrefsReader.getInt("status_alpha", 255);
-            applyAlpha = PrefsReader.getBool("status_alpha_enable", true);
-            LogUtil.log("StatusBarColorHook v2 init enabled=" + enabled + " color=" + colorHex + " alpha=" + alpha);
-            if (!enabled) return;
-
+            rainbowEnabled = PrefsReader.getBool("rainbow_enable", true);
+            breathEnabled = PrefsReader.getBool("rainbow_breath", false);
+            goldEnabled = PrefsReader.getBool("gold_enable", false);
+            LogUtil.log("RainbowHook init rainbow=" + rainbowEnabled + " breath=" + breathEnabled + " gold=" + goldEnabled);
+            if (!rainbowEnabled && !goldEnabled) return;
             hookTextClock(lp);
             hookOplusIcons(lp);
             hookBatteryIcon(lp);
             hookWifiSignal(lp);
             hookStatusBarIconContainer(lp);
         } catch (Throwable t) {
-            LogUtil.error("StatusBarColorHook v2 failed", t);
+            LogUtil.error("RainbowHook failed", t);
         }
     }
 
     private static int resolveColor() {
-        try {
-            int base = Color.parseColor(colorHex);
-            if (!applyAlpha) return base;
-            int a = Math.max(0, Math.min(255, alpha));
-            return Color.argb(a, Color.red(base), Color.green(base), Color.blue(base));
-        } catch (Throwable t) {
-            return Color.parseColor("#FFD866");
-        }
+        if (goldEnabled && !rainbowEnabled) return Color.parseColor("#FFD866");
+        long step = breathEnabled ? 120L : 40L;
+        float hue = (System.currentTimeMillis() % (360 * step)) / (float) step;
+        return Color.HSVToColor(255, new float[]{hue, 0.75f, 1.0f});
     }
 
     private static void hookTextClock(final XC_LoadPackage.LoadPackageParam lp) {
@@ -62,7 +55,7 @@ public class StatusBarColorHook {
                 });
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("update") || n.contains("Set") || n.contains("set") || n.contains("Refresh") || n.contains("refresh")) {
+                    if (n.contains("update") || n.contains("set") || n.contains("refresh")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 applyTextColor(param.thisObject);
@@ -70,7 +63,7 @@ public class StatusBarColorHook {
                         });
                     }
                 }
-                LogUtil.log("ColorHook clock hooked: " + name);
+                LogUtil.log("RainbowHook clock hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
@@ -91,7 +84,7 @@ public class StatusBarColorHook {
                 });
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("Update") || n.contains("OnIcon") || n.contains("set") || n.contains("Set") || n.contains("Draw")) {
+                    if (n.contains("Update") || n.contains("set") || n.contains("Draw") || n.contains("Icon")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 applyIconTint(param.thisObject);
@@ -99,7 +92,7 @@ public class StatusBarColorHook {
                         });
                     }
                 }
-                LogUtil.log("ColorHook icon hooked: " + name);
+                LogUtil.log("RainbowHook icons hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
@@ -123,7 +116,7 @@ public class StatusBarColorHook {
                         });
                     }
                 }
-                LogUtil.log("ColorHook battery hooked: " + name);
+                LogUtil.log("RainbowHook battery hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
@@ -148,7 +141,7 @@ public class StatusBarColorHook {
                         });
                     }
                 }
-                LogUtil.log("ColorHook wifi/signal hooked: " + name);
+                LogUtil.log("RainbowHook wifi/signal hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
@@ -167,7 +160,7 @@ public class StatusBarColorHook {
                         applyIconTint(param.thisObject);
                     }
                 });
-                LogUtil.log("ColorHook container hooked: " + name);
+                LogUtil.log("RainbowHook container hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
@@ -185,13 +178,8 @@ public class StatusBarColorHook {
             if (o instanceof TextView) {
                 ((TextView) o).setTextColor(resolveColor());
             }
-            Method getSelected = o.getClass().getMethod("getSelectedIconData");
-            Object iconData = null;
-            try { iconData = getSelected.invoke(o); } catch (Throwable ignored) {}
-            Method setTint = o.getClass().getMethod("setColorFilter", int.class);
-            if (setTint != null) {
-                setTint.invoke(o, resolveColor());
-            }
+            Method setColorFilter = o.getClass().getMethod("setColorFilter", int.class);
+            setColorFilter.invoke(o, resolveColor());
         } catch (Throwable ignored) {}
     }
 }
