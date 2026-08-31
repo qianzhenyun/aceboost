@@ -1,10 +1,13 @@
 package com.aceboost;
 
 import android.graphics.Color;
-import android.view.View;
+import android.graphics.drawable.Drawable;
 import android.widget.TextView;
-import de.robv.android.xposed.*;
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XPosedBridge;
+import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+
 import java.lang.reflect.Method;
 
 public class StatusBarColorHook {
@@ -19,15 +22,16 @@ public class StatusBarColorHook {
             colorHex = PrefsReader.getString("status_color", "#FFD866");
             alpha = PrefsReader.getInt("status_alpha", 255);
             applyAlpha = PrefsReader.getBool("status_alpha_enable", true);
-            LogUtil.log("StatusBarColorHook init enabled=" + enabled + " color=" + colorHex + " alpha=" + alpha);
+            LogUtil.log("StatusBarColorHook v2 init enabled=" + enabled + " color=" + colorHex + " alpha=" + alpha);
             if (!enabled) return;
 
-            hookClock(lp);
-            hookSignalCluster(lp);
-            hookBattery(lp);
-            hookStatusIcons(lp);
+            hookTextClock(lp);
+            hookOplusIcons(lp);
+            hookBatteryIcon(lp);
+            hookWifiSignal(lp);
+            hookStatusBarIconContainer(lp);
         } catch (Throwable t) {
-            LogUtil.error("StatusBarColorHook failed", t);
+            LogUtil.error("StatusBarColorHook v2 failed", t);
         }
     }
 
@@ -42,114 +46,116 @@ public class StatusBarColorHook {
         }
     }
 
-    private static void applyTextColor(View view) {
-        if (view == null) return;
-        try {
-            if (view instanceof TextView) {
-                ((TextView) view).setTextColor(resolveColor());
-            }
-        } catch (Throwable ignored) {}
-    }
-
-    private static void hookClock(final XC_LoadPackage.LoadPackageParam lp) {
-        String[] clockClasses = {
+    private static void hookTextClock(final XC_LoadPackage.LoadPackageParam lp) {
+        String[] names = {
             "com.android.systemui.statusbar.policy.Clock",
             "com.android.systemui.statusbar.Clock",
-            "android.widget.TextClock"
-        };
-        for (String name : clockClasses) {
-            try {
-                final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
-                XposedBridge.hookAllConstructors(clazz, new XC_MethodHook() {
-                    @Override protected void afterHookedMethod(MethodHookParam param) {
-                        try { applyTextColor((View) param.thisObject); } catch (Throwable ignored) {}
-                    }
-                });
-                for (Method m : clazz.getDeclaredMethods()) {
-                    if (m.getName().toLowerCase().contains("time") ||
-                        m.getName().toLowerCase().contains("clock") ||
-                        m.getName().toLowerCase().contains("update")) {
-                        XposedBridge.hookMethod(m, new XC_MethodHook() {
-                            @Override protected void afterHookedMethod(MethodHookParam param) {
-                                try { applyTextColor((View) param.thisObject); } catch (Throwable ignored) {}
-                            }
-                        });
-                    }
-                }
-                XposedHelpers.findAndHookMethod(clazz, "onAttachedToWindow", new XC_MethodHook() {
-                    @Override protected void afterHookedMethod(MethodHookParam param) {
-                        try { applyTextColor((View) param.thisObject); } catch (Throwable ignored) {}
-                    }
-                });
-                LogUtil.log("StatusBarColorHook clock hooked: " + name);
-            } catch (Throwable ignored) {}
-        }
-    }
-
-    private static void hookSignalCluster(final XC_LoadPackage.LoadPackageParam lp) {
-        String[] names = {
-            "com.android.systemui.statusbar.SignalClusterView",
-            "com.android.systemui.statusbar.phone.SignalClusterView",
-            "com.android.keyguard.CarrierText"
+            "com.oplus.systemui.statusbar.widget.StatClock"
         };
         for (String name : names) {
             try {
                 final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
                 XposedBridge.hookAllConstructors(clazz, new XC_MethodHook() {
                     @Override protected void afterHookedMethod(MethodHookParam param) {
-                        applyTintRecursive((View) param.thisObject);
-                    }
-                });
-                XposedHelpers.findAndHookMethod(clazz, "onAttachedToWindow", new XC_MethodHook() {
-                    @Override protected void afterHookedMethod(MethodHookParam param) {
-                        applyTintRecursive((View) param.thisObject);
+                        applyTextColor(param.thisObject);
                     }
                 });
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("apply") || n.contains("set") || n.contains("update") || n.contains("refresh")) {
+                    if (n.contains("update") || n.contains("Set") || n.contains("set") || n.contains("Refresh") || n.contains("refresh")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
-                                applyTintRecursive((View) param.thisObject);
+                                applyTextColor(param.thisObject);
                             }
                         });
                     }
                 }
-                LogUtil.log("StatusBarColorHook signal hooked: " + name);
+                LogUtil.log("ColorHook clock hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
 
-    private static void hookBattery(final XC_LoadPackage.LoadPackageParam lp) {
+    private static void hookOplusIcons(final XC_LoadPackage.LoadPackageParam lp) {
         String[] names = {
-            "com.android.systemui.battery.BatteryMeterView",
-            "com.android.systemui.BatteryMeterView"
+            "com.oplus.systemui.statusbar.phone.OplusStatusBarIcon",
+            "com.oplus.systemui.statusbar.widget.StatIconView",
+            "com.android.systemui.statusbar.StatusBarIconView"
         };
         for (String name : names) {
             try {
                 final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
                 XposedBridge.hookAllConstructors(clazz, new XC_MethodHook() {
                     @Override protected void afterHookedMethod(MethodHookParam param) {
-                        applyTintRecursive((View) param.thisObject);
+                        applyIconTint(param.thisObject);
                     }
                 });
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("set") || n.contains("update") || n.contains("refresh") || n.contains("onBattery")) {
+                    if (n.contains("Update") || n.contains("OnIcon") || n.contains("set") || n.contains("Set") || n.contains("Draw")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
-                                applyTintRecursive((View) param.thisObject);
+                                applyIconTint(param.thisObject);
                             }
                         });
                     }
                 }
-                LogUtil.log("StatusBarColorHook battery hooked: " + name);
+                LogUtil.log("ColorHook icon hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
 
-    private static void hookStatusIcons(final XC_LoadPackage.LoadPackageParam lp) {
+    private static void hookBatteryIcon(final XC_LoadPackage.LoadPackageParam lp) {
         String[] names = {
+            "com.oplus.systemui.statusbar.util.StatusBarHelper",
+            "com.oplus.systemui.statusbar.util.StatusBarViewUtil",
+            "com.android.systemui.battery.BatteryMeterView"
+        };
+        for (String name : names) {
+            try {
+                final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
+                for (Method m : clazz.getDeclaredMethods()) {
+                    String n = m.getName();
+                    if (n.contains("Icon") || n.contains("Battery") || n.contains("Tint") || n.contains("Update")) {
+                        XposedBridge.hookMethod(m, new XC_MethodHook() {
+                            @Override protected void afterHookedMethod(MethodHookParam param) {
+                                applyIconTint(param.thisObject);
+                            }
+                        });
+                    }
+                }
+                LogUtil.log("ColorHook battery hooked: " + name);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private static void hookWifiSignal(final XC_LoadPackage.LoadPackageParam lp) {
+        String[] names = {
+            "com.oplus.systemui.qs.utils.QsWifiIcons",
+            "com.android.systemui.statusbar.connectivity.WifiIconsEx",
+            "com.oplus.systemui.statusbar.policy.MobileIconSets",
+            "com.oplus.systemui.statusbar.policy.TelephonyIcons"
+        };
+        for (String name : names) {
+            try {
+                final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
+                for (Method m : clazz.getDeclaredMethods()) {
+                    String n = m.getName();
+                    if (n.contains("Icon") || n.contains("Color") || n.contains("Tint")) {
+                        XposedBridge.hookMethod(m, new XC_MethodHook() {
+                            @Override protected void afterHookedMethod(MethodHookParam param) {
+                                applyIconTint(param.thisObject);
+                            }
+                        });
+                    }
+                }
+                LogUtil.log("ColorHook wifi/signal hooked: " + name);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private static void hookStatusBarIconContainer(final XC_LoadPackage.LoadPackageParam lp) {
+        String[] names = {
+            "com.oplus.systemui.privacy.OplusPrivacyIconContainer",
             "com.android.systemui.statusbar.phone.StatusIconContainer",
             "com.android.systemui.statusbar.StatusIconContainer"
         };
@@ -158,33 +164,34 @@ public class StatusBarColorHook {
                 final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
                 XposedBridge.hookAllConstructors(clazz, new XC_MethodHook() {
                     @Override protected void afterHookedMethod(MethodHookParam param) {
-                        applyTintRecursive((View) param.thisObject);
+                        applyIconTint(param.thisObject);
                     }
                 });
-                LogUtil.log("StatusBarColorHook icons hooked: " + name);
+                LogUtil.log("ColorHook container hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
 
-    private static void applyTintRecursive(View view) {
-        if (view == null) return;
+    private static void applyTextColor(Object o) {
         try {
-            if (view instanceof TextView) {
-                ((TextView) view).setTextColor(resolveColor());
+            if (o instanceof TextView) {
+                ((TextView) o).setTextColor(resolveColor());
             }
-            try {
-                if (view instanceof android.view.ViewGroup) {
-                    android.view.ViewGroup vg = (android.view.ViewGroup) view;
-                    int childCount = vg.getChildCount();
-                    for (int i = 0; i < childCount; i++) {
-                        applyTintRecursive(vg.getChildAt(i));
-                    }
-                }
-            } catch (Throwable ignored) {}
-            try {
-                Method setColorFilter = view.getClass().getMethod("setColorFilter", int.class);
-                setColorFilter.invoke(view, resolveColor());
-            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {}
+    }
+
+    private static void applyIconTint(Object o) {
+        try {
+            if (o instanceof TextView) {
+                ((TextView) o).setTextColor(resolveColor());
+            }
+            Method getSelected = o.getClass().getMethod("getSelectedIconData");
+            Object iconData = null;
+            try { iconData = getSelected.invoke(o); } catch (Throwable ignored) {}
+            Method setTint = o.getClass().getMethod("setColorFilter", int.class);
+            if (setTint != null) {
+                setTint.invoke(o, resolveColor());
+            }
         } catch (Throwable ignored) {}
     }
 }
