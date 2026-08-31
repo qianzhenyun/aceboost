@@ -98,7 +98,6 @@ public class MainActivity extends Activity {
         LinearLayout page = basePage("状态栏");
         addToggleRow(page, "彩虹渐变", "状态栏时间与图标使用彩虹色", "rainbow_enable", true);
         addToggleRow(page, "呼吸模式", "彩虹颜色缓慢流动", "rainbow_breath", false);
-        addToggleRow(page, "金色默认", "使用默认金色，关闭彩虹", "gold_enable", false);
         contentArea.addView(page);
     }
 
