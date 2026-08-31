@@ -50,6 +50,7 @@ public class MainActivity extends Activity {
             addToggle(root, "🖥️ 全屏防烧屏", "像素级微移，保护 OLED", "burnin_enable", true);
             addToggle(root, "🎨 状态栏时钟颜色", "时间 / 电量 / 信号颜色", "color_enable", true);
             addColorPicker(root);
+            addAlphaSlider(root);
 
             addSectionHeader(root, "隐私与便捷");
             addToggle(root, "✉️ 验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
@@ -257,5 +258,28 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> Toast.makeText(this, "执行失败：" + t.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
+    }
+    private void addAlphaSlider(LinearLayout parent) {
+        LinearLayout card = makeCard();
+        TextView title = new TextView(this);
+        title.setText("透明度：" + sp.getInt("status_alpha", 255));
+        title.setTextColor(Color.WHITE);
+        title.setTextSize(15);
+        card.addView(title);
+
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(200);
+        bar.setProgress(sp.getInt("status_alpha", 255) - 55);
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                int val = p + 55;
+                title.setText("透明度：" + val);
+                if (fromUser) sp.edit().putInt("status_alpha", val).apply();
+            }
+            @Override public void onStartTrackingTouch(SeekBar s) {}
+            @Override public void onStopTrackingTouch(SeekBar(s) {}
+        });
+        card.addView(bar);
+        parent.addView(card);
     }
 }
