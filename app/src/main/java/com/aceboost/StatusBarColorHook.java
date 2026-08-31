@@ -193,7 +193,7 @@ public class StatusBarColorHook {
         String[] names = {
             "com.oplus.systemui.statusbar.util.StatusBarHelper",
             "com.oplus.systemui.statusbar.util.StatusBarViewUtil",
-            "com.android.systemui.battery.BatteryMeterView"
+            "com.android.systemui.battery.BatteryMeterView", "com.android.systemui.statusbar.phone.BatteryMeterView", "com.oplus.systemui.statusbar.phone.OplusBatteryMeterView", "com.oplus.systemui.statusbar.views.OplusBatteryMeterView"
         };
         for (String name : names) {
             try {
