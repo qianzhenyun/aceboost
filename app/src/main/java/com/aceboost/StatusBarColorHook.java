@@ -27,6 +27,7 @@ public class StatusBarColorHook {
             hookBatteryIcon(lp);
             hookWifiSignal(lp);
             hookStatusBarIconContainer(lp);
+            hookMoreIcons(lp);
         } catch (Throwable t) {
             LogUtil.error("RainbowHook failed", t);
         }
@@ -161,6 +162,45 @@ public class StatusBarColorHook {
                     }
                 });
                 LogUtil.log("RainbowHook container hooked: " + name);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    private static void hookMoreIcons(final XC_LoadPackage.LoadPackageParam lp) {
+        String[] names = {
+            "com.android.systemui.statusbar.policy.BluetoothControllerImpl",
+            "com.android.systemui.qs.tiles.BluetoothTile",
+            "com.android.systemui.statusbar.policy.AirplaneModeControllerImpl",
+            "com.android.systemui.statusbar.policy.HotspotControllerImpl",
+            "com.android.systemui.statusbar.policy.DataSaverControllerImpl",
+            "com.android.systemui.statusbar.policy.NfcController",
+            "com.android.systemui.statusbar.policy.RotationLockControllerImpl",
+            "com.android.systemui.statusbar.policy.DndControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusDndControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusBluetoothControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusAirplaneControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusHotspotControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusNfcControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusDataSaverControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusVpnControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusVolteControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusLocationControllerImpl",
+            "com.oplus.systemui.statusbar.policy.OplusHeadsetControllerImpl"
+        };
+        for (String name : names) {
+            try {
+                final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
+                for (Method m : clazz.getDeclaredMethods()) {
+                    String n = m.getName();
+                    if (n.contains("Icon") || n.contains("Color") || n.contains("Tint") || n.contains("Update")) {
+                        XposedBridge.hookMethod(m, new XC_MethodHook() {
+                            @Override protected void afterHookedMethod(MethodHookParam param) {
+                                applyIconTint(param.thisObject);
+                            }
+                        });
+                    }
+                }
+                LogUtil.log("RainbowHook more hooked: " + name);
             } catch (Throwable ignored) {}
         }
     }
