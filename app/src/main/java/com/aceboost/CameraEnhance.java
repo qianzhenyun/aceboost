@@ -2,7 +2,6 @@ package com.aceboost;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,15 +20,11 @@ public class CameraEnhance {
         new Thread(() -> {
             String result;
             try {
-                // 1. 备份原文件
                 if (!new File(BACKUP_PATH).exists()) {
                     exec("cp " + EIS_PATH + " " + BACKUP_PATH);
                 }
-
-                // 2. 重新挂载 /odm 为可写
                 exec("mount -o remount,rw /odm");
 
-                // 3. 读取 EIS 配置，提升防抖强度
                 File f = new File("/storage/emulated/0/Documents/camera_eis_tmp.vcfg");
                 exec("cp " + EIS_PATH + " " + f.getAbsolutePath());
                 StringBuilder sb = new StringBuilder();
@@ -40,7 +35,6 @@ public class CameraEnhance {
                 }
                 br.close();
                 String content = sb.toString();
-                // 将 strength 从 0.85 提升到 0.95
                 content = content.replace("\"strength\": 0.85", "\"strength\": 0.95");
                 content = content.replace("\"strengthDeferMin\": 0.85", "\"strengthDeferMin\": 0.95");
 
@@ -48,7 +42,6 @@ public class CameraEnhance {
                 fw.write(content);
                 fw.close();
 
-                // 4. 写回
                 exec("cp " + f.getAbsolutePath() + " " + EIS_PATH);
                 exec("chmod 644 " + EIS_PATH);
                 exec("mount -o remount,ro /odm");
@@ -57,8 +50,9 @@ public class CameraEnhance {
             } catch (Throwable t) {
                 result = "相机增强失败：" + t.getMessage();
             }
+            final String finalResult = result;
             if (cb != null) {
-                new Handler(Looper.getMainLooper()).post(() -> cb.onResult(result));
+                new Handler(Looper.getMainLooper()).post(() -> cb.onResult(finalResult));
             }
         }).start();
     }
@@ -80,8 +74,9 @@ public class CameraEnhance {
             } catch (Throwable t) {
                 result = "恢复失败：" + t.getMessage();
             }
+            final String finalResult = result;
             if (cb != null) {
-                new Handler(Looper.getMainLooper()).post(() -> cb.onResult(result));
+                new Handler(Looper.getMainLooper()).post(() -> cb.onResult(finalResult));
             }
         }).start();
     }
