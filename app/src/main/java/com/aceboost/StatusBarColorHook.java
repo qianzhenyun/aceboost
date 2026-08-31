@@ -2,6 +2,7 @@ package com.aceboost;
 
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.graphics.PorterDuff;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -35,7 +36,7 @@ public class StatusBarColorHook {
         try {
             rainbowEnabled = PrefsReader.getBool("rainbow_enable", true);
             flowEnabled = PrefsReader.getBool("rainbow_breath", true);
-            goldEnabled = PrefsReader.getBool("gold_enable", false);
+            goldEnabled = false;
             LogUtil.log("MarqueeHook init rainbow=" + rainbowEnabled + " flow=" + flowEnabled + " gold=" + goldEnabled);
             if (!rainbowEnabled && !goldEnabled) return;
             startTime = System.currentTimeMillis();
@@ -52,9 +53,8 @@ public class StatusBarColorHook {
     }
 
     private static int resolveColor(int phase) {
-        if (goldEnabled && !rainbowEnabled) return Color.parseColor("#FFD866");
         long elapsed = System.currentTimeMillis() - startTime;
-        float speed = flowEnabled ? 0.012f : 0.025f;
+        float speed = flowEnabled ? 0.005f : 0.010f;
         float hue = ((elapsed * speed) + phase) % 360f;
         return Color.HSVToColor(255, new float[]{hue, 0.8f, 1.0f});
     }
@@ -83,10 +83,10 @@ public class StatusBarColorHook {
                             drawables.remove(i);
                             continue;
                         }
-                        d.setColorFilter(resolveColor(i * 37 % 360));
+                        d.setColorFilter(resolveColor(i * 37 % 360), PorterDuff.Mode.SRC_IN);
                     }
                 }
-                handler.postDelayed(this, 120);
+                handler.postDelayed(this, 320);
             }
         };
         handler.postDelayed(ticker, 120);
@@ -117,8 +117,6 @@ public class StatusBarColorHook {
             }
             if (o instanceof View) {
                 View view = (View) o;
-                Method setColorFilter = view.getClass().getMethod("setColorFilter", int.class);
-                setColorFilter.invoke(view, color);
                 if (o instanceof ViewGroup) {
                     ViewGroup vg = (ViewGroup) o;
                     int childCount = vg.getChildCount();
