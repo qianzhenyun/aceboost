@@ -1,8 +1,12 @@
 package com.aceboost;
 
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -20,6 +24,7 @@ public class StatusBarColorHook {
     private static boolean flowEnabled = true;
     private static boolean goldEnabled = false;
     private static final List<WeakReference<Object>> views = new ArrayList<>();
+    private static final List<WeakReference<Drawable>> drawables = new ArrayList<>();
     private static final List<Integer> phases = new ArrayList<>();
     private static Handler handler;
     private static Runnable ticker;
@@ -29,7 +34,7 @@ public class StatusBarColorHook {
     public static void hook(final XC_LoadPackage.LoadPackageParam lp) {
         try {
             rainbowEnabled = PrefsReader.getBool("rainbow_enable", true);
-            flowEnabled = PrefsReader.getBool("rainbow_breath", false);
+            flowEnabled = PrefsReader.getBool("rainbow_breath", true);
             goldEnabled = PrefsReader.getBool("gold_enable", false);
             LogUtil.log("MarqueeHook init rainbow=" + rainbowEnabled + " flow=" + flowEnabled + " gold=" + goldEnabled);
             if (!rainbowEnabled && !goldEnabled) return;
@@ -49,9 +54,9 @@ public class StatusBarColorHook {
     private static int resolveColor(int phase) {
         if (goldEnabled && !rainbowEnabled) return Color.parseColor("#FFD866");
         long elapsed = System.currentTimeMillis() - startTime;
-        float speed = flowEnabled ? 0.35f : 0.18f;
+        float speed = flowEnabled ? 0.012f : 0.025f;
         float hue = ((elapsed * speed) + phase) % 360f;
-        return Color.HSVToColor(255, new float[]{hue, 0.85f, 1.0f});
+        return Color.HSVToColor(255, new float[]{hue, 0.8f, 1.0f});
     }
 
     private static void startTicker() {
@@ -68,13 +73,23 @@ public class StatusBarColorHook {
                             continue;
                         }
                         int phase = i < phases.size() ? phases.get(i) : 0;
-                        applyColorTo(o, resolveColor(phase));
+                        applyColorToView(o, resolveColor(phase));
                     }
                 }
-                handler.postDelayed(this, 50);
+                synchronized (drawables) {
+                    for (int i = drawables.size() - 1; i >= 0; i--) {
+                        Drawable d = drawables.get(i).get();
+                        if (d == null) {
+                            drawables.remove(i);
+                            continue;
+                        }
+                        d.setColorFilter(resolveColor(i * 37 % 360));
+                    }
+                }
+                handler.postDelayed(this, 120);
             }
         };
-        handler.postDelayed(ticker, 50);
+        handler.postDelayed(ticker, 120);
     }
 
     private static void addView(Object o) {
@@ -85,13 +100,33 @@ public class StatusBarColorHook {
         }
     }
 
-    private static void applyColorTo(Object o, int color) {
+    private static void addDrawable(Object o) {
+        if (!(o instanceof Drawable)) return;
+        synchronized (drawables) {
+            drawables.add(new WeakReference<>((Drawable) o));
+        }
+    }
+
+    private static void applyColorToView(Object o, int color) {
         try {
             if (o instanceof TextView) {
                 ((TextView) o).setTextColor(color);
             }
-            Method setColorFilter = o.getClass().getMethod("setColorFilter", int.class);
-            setColorFilter.invoke(o, color);
+            if (o instanceof ImageView) {
+                ((ImageView) o).setColorFilter(color);
+            }
+            if (o instanceof View) {
+                View view = (View) o;
+                Method setColorFilter = view.getClass().getMethod("setColorFilter", int.class);
+                setColorFilter.invoke(view, color);
+                if (o instanceof ViewGroup) {
+                    ViewGroup vg = (ViewGroup) o;
+                    int childCount = vg.getChildCount();
+                    for (int i = 0; i < childCount; i++) {
+                        applyColorToView(vg.getChildAt(i), color);
+                    }
+                }
+            }
         } catch (Throwable ignored) {}
     }
 
@@ -144,6 +179,9 @@ public class StatusBarColorHook {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 addView(param.thisObject);
+                                if (param.getResult() instanceof Drawable) {
+                                    addDrawable(param.getResult());
+                                }
                             }
                         });
                     }
@@ -164,10 +202,13 @@ public class StatusBarColorHook {
                 final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("Icon") || n.contains("Battery") || n.contains("Tint") || n.contains("Update")) {
+                    if (n.contains("Icon") || n.contains("Battery") || n.contains("Tint") || n.contains("Update") || n.contains("get")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 addView(param.thisObject);
+                                if (param.getResult() instanceof Drawable) {
+                                    addDrawable(param.getResult());
+                                }
                             }
                         });
                     }
@@ -189,10 +230,13 @@ public class StatusBarColorHook {
                 final Class<?> clazz = XposedHelpers.findClass(name, lp.classLoader);
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("Icon") || n.contains("Color") || n.contains("Tint")) {
+                    if (n.contains("Icon") || n.contains("Color") || n.contains("Tint") || n.contains("get")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 addView(param.thisObject);
+                                if (param.getResult() instanceof Drawable) {
+                                    addDrawable(param.getResult());
+                                }
                             }
                         });
                     }
@@ -251,6 +295,9 @@ public class StatusBarColorHook {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 addView(param.thisObject);
+                                if (param.getResult() instanceof Drawable) {
+                                    addDrawable(param.getResult());
+                                }
                             }
                         });
                     }
