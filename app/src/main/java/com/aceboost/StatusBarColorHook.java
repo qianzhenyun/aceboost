@@ -17,19 +17,21 @@ import java.util.List;
 
 public class StatusBarColorHook {
     private static boolean rainbowEnabled = true;
-    private static boolean breathEnabled = false;
+    private static boolean flowEnabled = true;
     private static boolean goldEnabled = false;
     private static final List<WeakReference<Object>> views = new ArrayList<>();
+    private static final List<Integer> phases = new ArrayList<>();
     private static Handler handler;
     private static Runnable ticker;
     private static long startTime = 0;
+    private static int phaseCounter = 0;
 
     public static void hook(final XC_LoadPackage.LoadPackageParam lp) {
         try {
             rainbowEnabled = PrefsReader.getBool("rainbow_enable", true);
-            breathEnabled = PrefsReader.getBool("rainbow_breath", false);
+            flowEnabled = PrefsReader.getBool("rainbow_breath", false);
             goldEnabled = PrefsReader.getBool("gold_enable", false);
-            LogUtil.log("MarqueeHook init rainbow=" + rainbowEnabled + " breath=" + breathEnabled + " gold=" + goldEnabled);
+            LogUtil.log("MarqueeHook init rainbow=" + rainbowEnabled + " flow=" + flowEnabled + " gold=" + goldEnabled);
             if (!rainbowEnabled && !goldEnabled) return;
             startTime = System.currentTimeMillis();
             hookTextClock(lp);
@@ -44,11 +46,11 @@ public class StatusBarColorHook {
         }
     }
 
-    private static int resolveColor() {
+    private static int resolveColor(int phase) {
         if (goldEnabled && !rainbowEnabled) return Color.parseColor("#FFD866");
         long elapsed = System.currentTimeMillis() - startTime;
-        float speed = breathEnabled ? 0.04f : 0.15f;
-        float hue = (elapsed * speed) % 360f;
+        float speed = flowEnabled ? 0.35f : 0.18f;
+        float hue = ((elapsed * speed) + phase) % 360f;
         return Color.HSVToColor(255, new float[]{hue, 0.85f, 1.0f});
     }
 
@@ -57,15 +59,16 @@ public class StatusBarColorHook {
         handler = new Handler(Looper.getMainLooper());
         ticker = new Runnable() {
             @Override public void run() {
-                int color = resolveColor();
                 synchronized (views) {
                     for (int i = views.size() - 1; i >= 0; i--) {
                         Object o = views.get(i).get();
                         if (o == null) {
                             views.remove(i);
+                            phases.remove(i);
                             continue;
                         }
-                        applyColorTo(o, color);
+                        int phase = i < phases.size() ? phases.get(i) : 0;
+                        applyColorTo(o, resolveColor(phase));
                     }
                 }
                 handler.postDelayed(this, 50);
@@ -78,6 +81,7 @@ public class StatusBarColorHook {
         if (o == null) return;
         synchronized (views) {
             views.add(new WeakReference<>(o));
+            phases.add((phaseCounter++ * 45) % 360);
         }
     }
 
@@ -136,7 +140,7 @@ public class StatusBarColorHook {
                 });
                 for (Method m : clazz.getDeclaredMethods()) {
                     String n = m.getName();
-                    if (n.contains("Update") || n.contains("set") || n.contains("Draw") || n.contains("Icon")) {
+                    if (n.contains("update") || n.contains("set") || n.contains("draw") || n.contains("Icon")) {
                         XposedBridge.hookMethod(m, new XC_MethodHook() {
                             @Override protected void afterHookedMethod(MethodHookParam param) {
                                 addView(param.thisObject);
