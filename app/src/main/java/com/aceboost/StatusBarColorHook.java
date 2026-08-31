@@ -4,7 +4,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.widget.TextView;
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XPosedBridge;
+import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
