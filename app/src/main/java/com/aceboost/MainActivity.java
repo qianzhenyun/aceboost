@@ -134,6 +134,8 @@ public class MainActivity extends Activity {
         LinearLayout page = basePage("设置");
         addActionRow(page, "软重启 Zygote", "快速重新加载模块", () -> execRoot("setprop ctl.restart zygote"));
         addActionRow(page, "重启 SystemUI", "重新加载状态栏", () -> execRoot("pkill -f com.android.systemui"));
+        addActionRow(page, "应用相机增强", "实验性：提升 EIS 防抖强度", () -> CameraEnhance.applyEisBoost(msg -> toast(msg)));
+        addActionRow(page, "恢复相机配置", "恢复原始 EIS 配置", () -> CameraEnhance.restoreEis(msg -> toast(msg)));
         contentArea.addView(page);
     }
 
