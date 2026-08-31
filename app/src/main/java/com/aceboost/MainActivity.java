@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.widget.*;
-import android.view.*;
 
 public class MainActivity extends Activity {
     private SharedPreferences sp;
@@ -78,6 +77,12 @@ public class MainActivity extends Activity {
             err.setPadding(32, 32, 32, 32);
             setContentView(err);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LogUtil.clearLocal();
     }
 
     private void addSectionHeader(LinearLayout parent, String text) {

@@ -8,21 +8,21 @@ public class VibrationHook {
     private static float level = 1.6f;
 
     public static void hook(XC_LoadPackage.LoadPackageParam lp) {
-        enabled = PrefsReader.getBool("vibrate_enable", true);
-        level = PrefsReader.getInt("vibrate_level", 160) / 100f;
-        if (!enabled) return;
         try {
+            enabled = PrefsReader.getBool("vibrate_enable", true);
+            level = PrefsReader.getInt("vibrate_level", 160) / 100f;
+            LogUtil.log("VibrationHook init enabled=" + enabled + " level=" + level);
+            if (!enabled) return;
+
             Class<?> vib = XposedHelpers.findClass("android.os.Vibrator", lp.classLoader);
-            XposedHelpers.findAndHookMethod(vib, "vibrate", long.class, android.media.AudioAttributes.class, new XC_MethodHook() {
-                @Override protected void beforeHookedMethod(MethodHookParam p) {
-                    try {
-                        long ms = (long) p.args[0];
-                        p.args[0] = (long) (ms * level);
-                    } catch (Throwable ignored) {}
+            LogUtil.log("VibrationHook found Vibrator: " + vib);
+            for (java.lang.reflect.Method m : vib.getDeclaredMethods()) {
+                if (m.getName().equals("vibrate")) {
+                    LogUtil.log("VibrationHook candidate: " + m.getName() + " params=" + java.util.Arrays.toString(m.getParameterTypes()));
                 }
-            });
+            }
         } catch (Throwable t) {
-            XposedBridge.log("AceBoost Vibration hook error: " + t);
+            LogUtil.error("VibrationHook failed", t);
         }
     }
 }
