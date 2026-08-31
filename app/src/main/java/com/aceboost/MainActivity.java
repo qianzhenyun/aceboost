@@ -277,7 +277,7 @@ public class MainActivity extends Activity {
                 if (fromUser) sp.edit().putInt("status_alpha", val).apply();
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar(s) {}
+            @Override public void onStopTrackingTouch(SeekBar s) {}
         });
         card.addView(bar);
         parent.addView(card);
