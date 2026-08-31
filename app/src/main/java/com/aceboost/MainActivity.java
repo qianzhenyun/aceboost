@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
 
             LinearLayout root = new LinearLayout(this);
             root.setOrientation(LinearLayout.VERTICAL);
-            root.setBackgroundColor(Color.parseColor("#0B0F14"));
+            root.setBackgroundColor(Color.parseColor("#0A0D12"));
 
             contentArea = new FrameLayout(this);
             contentArea.setLayoutParams(new LinearLayout.LayoutParams(
@@ -34,8 +34,9 @@ public class MainActivity extends Activity {
             navBar.setOrientation(LinearLayout.HORIZONTAL);
             navBar.setPadding(8, 10, 8, 16);
             GradientDrawable navBg = new GradientDrawable();
-            navBg.setColor(Color.argb(170, 30, 40, 55));
-            navBg.setCornerRadius(24);
+            navBg.setColor(Color.argb(150, 28, 36, 48));
+            navBg.setCornerRadius(22);
+            navBg.setStroke(1, Color.argb(50, 255, 255, 255));
             navBar.setBackground(navBg);
             root.addView(navBar);
 
@@ -86,11 +87,11 @@ public class MainActivity extends Activity {
     }
 
     private void updateTabColors() {
-        tabStatus.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabAudio.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabDisplay.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabPrivacy.setTextColor(currentTab == 3 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabSettings.setTextColor(currentTab == 4 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabStatus.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabAudio.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabDisplay.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabPrivacy.setTextColor(currentTab == 3 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabSettings.setTextColor(currentTab == 4 ? Color.WHITE : Color.parseColor("#93A0B4"));
     }
 
     private void buildStatusPage() {
@@ -161,7 +162,7 @@ public class MainActivity extends Activity {
         TextView d = new TextView(this);
         d.setText(desc);
         d.setTextSize(12);
-        d.setTextColor(Color.parseColor("#8899AA"));
+        d.setTextColor(Color.parseColor("#93A0B4"));
         textBox.addView(t);
         textBox.addView(d);
         Switch sw = new Switch(this);
@@ -207,14 +208,14 @@ public class MainActivity extends Activity {
         TextView d = new TextView(this);
         d.setText(desc);
         d.setTextSize(12);
-        d.setTextColor(Color.parseColor("#8899AA"));
+        d.setTextColor(Color.parseColor("#93A0B4"));
         box.addView(t);
         box.addView(d);
         row.addView(box);
         TextView arrow = new TextView(this);
         arrow.setText(">");
         arrow.setTextSize(16);
-        arrow.setTextColor(Color.parseColor("#8899AA"));
+        arrow.setTextColor(Color.parseColor("#93A0B4"));
         row.addView(arrow);
         row.setOnClickListener(v -> {
             if (action != null) action.run();
@@ -227,8 +228,9 @@ public class MainActivity extends Activity {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setPadding(14, 12, 14, 12);
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.argb(90, 255, 255, 255));
-        bg.setCornerRadius(16);
+        bg.setColor(Color.argb(55, 255, 255, 255));
+        bg.setCornerRadius(18);
+        bg.setStroke(1, Color.argb(36, 255, 255, 255));
         row.setBackground(bg);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
