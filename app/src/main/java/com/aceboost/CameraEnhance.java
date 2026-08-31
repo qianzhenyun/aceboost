@@ -39,6 +39,7 @@ public class CameraEnhance {
                 fw.write(content);
                 fw.close();
                 exec("chmod 644 " + TMP_PATH);
+exec("umount " + EIS_PATH);
                 exec("mount --bind " + TMP_PATH + " " + EIS_PATH);
                 exec("pkill -f com.oplus.camera");
                 result = "相机增强已应用，请重启相机";
