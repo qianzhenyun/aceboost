@@ -16,7 +16,7 @@ public class MainActivity extends Activity {
     private SharedPreferences sp;
     private FrameLayout contentArea;
     private LinearLayout navBar;
-    private TextView tabOverview, tabUserApps, tabSystemApps, tabSettings;
+    private TextView tabStatus, tabAudio, tabDisplay, tabPrivacy, tabSettings;
     private int currentTab = 0;
 
     @Override
@@ -36,17 +36,19 @@ public class MainActivity extends Activity {
 
             navBar = new LinearLayout(this);
             navBar.setOrientation(LinearLayout.HORIZONTAL);
-            navBar.setPadding(12, 12, 12, 20);
+            navBar.setPadding(8, 10, 8, 16);
             navBar.setBackground(getNavBackground());
             root.addView(navBar);
 
-            tabOverview = createTab("概览", 0);
-            tabUserApps = createTab("手机软件", 1);
-            tabSystemApps = createTab("本机应用", 2);
-            tabSettings = createTab("设置", 3);
-            navBar.addView(tabOverview);
-            navBar.addView(tabUserApps);
-            navBar.addView(tabSystemApps);
+            tabStatus = createTab("状态栏", 0);
+            tabAudio = createTab("音频", 1);
+            tabDisplay = createTab("显示", 2);
+            tabPrivacy = createTab("隐私", 3);
+            tabSettings = createTab("设置", 4);
+            navBar.addView(tabStatus);
+            navBar.addView(tabAudio);
+            navBar.addView(tabDisplay);
+            navBar.addView(tabPrivacy);
             navBar.addView(tabSettings);
 
             switchTab(0);
@@ -64,9 +66,9 @@ public class MainActivity extends Activity {
     private TextView createTab(String label, final int index) {
         TextView tv = new TextView(this);
         tv.setText(label);
-        tv.setTextSize(14);
+        tv.setTextSize(13);
         tv.setGravity(Gravity.CENTER);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(0, 72, 1f));
+        tv.setLayoutParams(new LinearLayout.LayoutParams(0, 64, 1f));
         tv.setOnClickListener(v -> switchTab(index));
         return tv;
     }
@@ -74,18 +76,22 @@ public class MainActivity extends Activity {
     private void switchTab(int index) {
         currentTab = index;
         contentArea.removeAllViews();
-        if (index == 0) buildOverviewPage();
-        else if (index == 1) buildUserAppsPage();
-        else if (index == 2) buildSystemAppsPage();
-        else buildSettingsPage();
+        switch (index) {
+            case 0: buildStatusPage(); break;
+            case 1: buildAudioPage(); break;
+            case 2: buildDisplayPage(); break;
+            case 3: buildPrivacyPage(); break;
+            default: buildSettingsPage(); break;
+        }
         updateTabColors();
     }
 
     private void updateTabColors() {
-        tabOverview.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabUserApps.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabSystemApps.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#8899AA"));
-        tabSettings.setTextColor(currentTab == 3 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabStatus.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabAudio.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabDisplay.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabPrivacy.setTextColor(currentTab == 3 ? Color.WHITE : Color.parseColor("#8899AA"));
+        tabSettings.setTextColor(currentTab == 4 ? Color.WHITE : Color.parseColor("#8899AA"));
     }
 
     private GradientDrawable getGlassBackground() {
@@ -97,125 +103,69 @@ public class MainActivity extends Activity {
 
     private GradientDrawable getNavBackground() {
         GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.argb(160, 12, 16, 24));
+        gd.setColor(Color.argb(170, 12, 16, 24));
         gd.setCornerRadius(24);
         return gd;
     }
 
-    private void buildOverviewPage() {
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(16, 24, 16, 16);
-
-        TextView title = new TextView(this);
-        title.setText("⚡ AceBoost");
-        title.setTextSize(30);
-        title.setTextColor(getRainbowColor());
-        page.addView(title);
-
-        TextView subtitle = new TextView(this);
-        subtitle.setText("一加 Ace3V 增强模块 · LSPosed");
-        subtitle.setTextSize(14);
-        subtitle.setTextColor(Color.parseColor("#99AABB"));
-        subtitle.setPadding(0, 4, 0, 20);
-        page.addView(subtitle);
-
-        addCard(page, "状态栏彩虹色", "时间 / 图标 / 信号 / 电量\n默认彩虹渐变，可选呼吸模式", true);
-        addCard(page, "液态玻璃", "应用界面磨砂玻璃背景", true);
-        addCard(page, "音量 / 马达 / 音频", "系统级增强选项", false);
-        addCard(page, "隐私与便捷", "验证码 / 隐藏 Root", false);
-
+    private void buildStatusPage() {
+        LinearLayout page = basePage("状态栏");
+        addToggleRow(page, "彩虹渐变", "状态栏时间与图标使用彩虹色", "rainbow_enable", true);
+        addToggleRow(page, "呼吸模式", "彩虹颜色缓慢流动", "rainbow_breath", false);
+        addToggleRow(page, "金色默认", "使用默认金色，关闭彩虹", "gold_enable", false);
         contentArea.addView(page);
     }
 
-    private void buildUserAppsPage() {
-        contentArea.addView(buildAppList(false));
+    private void buildAudioPage() {
+        LinearLayout page = basePage("音频");
+        addToggleRow(page, "音量增强", "音量键步进 + 最大音量上限", "vol_enable", true);
+        addSeekRow(page, "音量步数", 30, 100, "vol_steps", 60);
+        addSeekRow(page, "最大音量上限", 150, 255, "vol_max", 201);
+        addToggleRow(page, "采样率优化", "目标采样率 192000Hz", "audio_enable", true);
+        addToggleRow(page, "马达增强", "振动强度提升", "vibrate_enable", true);
+        addSeekRow(page, "振动强度 (%)", 100, 200, "vibrate_level", 160);
+        contentArea.addView(page);
     }
 
-    private void buildSystemAppsPage() {
-        contentArea.addView(buildAppList(true));
+    private void buildDisplayPage() {
+        LinearLayout page = basePage("显示");
+        addToggleRow(page, "液态玻璃", "应用界面磨砂玻璃背景", "glass_enable", true);
+        addToggleRow(page, "全屏防烧屏", "像素级微移，保护 OLED", "burnin_enable", true);
+        addActionRow(page, "手机软件", "对第三方应用启用液态玻璃");
+        addActionRow(page, "本机应用", "对系统应用启用液态玻璃");
+        contentArea.addView(page);
     }
 
-    private LinearLayout buildAppList(boolean system) {
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(16, 20, 16, 16);
-
-        TextView title = new TextView(this);
-        title.setText(system ? "本机应用" : "手机软件");
-        title.setTextSize(20);
-        title.setTextColor(Color.WHITE);
-        page.addView(title);
-
-        ScrollView scroll = new ScrollView(this);
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        PackageManager pm = getPackageManager();
-        List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
-        for (ApplicationInfo info : apps) {
-            boolean isSys = (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
-            if (isSys != system) continue;
-            String name = info.loadLabel(pm).toString();
-            LinearLayout row = new LinearLayout(this);
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setPadding(12, 12, 12, 12);
-            GradientDrawable rowBg = new GradientDrawable();
-            rowBg.setColor(Color.argb(90, 255, 255, 255));
-            rowBg.setCornerRadius(16);
-            row.setBackground(rowBg);
-            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-            rlp.setMargins(0, 0, 0, 10);
-            row.setLayoutParams(rlp);
-            TextView appName = new TextView(this);
-            appName.setText(name);
-            appName.setTextSize(15);
-            appName.setTextColor(Color.WHITE);
-            row.addView(appName);
-            TextView pkg = new TextView(this);
-            pkg.setText(info.packageName);
-            pkg.setTextSize(11);
-            pkg.setTextColor(Color.parseColor("#8899AA"));
-            pkg.setGravity(Gravity.END);
-            pkg.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-            row.addView(pkg);
-            list.addView(row);
-        }
-        scroll.addView(list);
-        page.addView(scroll, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
-        return page;
+    private void buildPrivacyPage() {
+        LinearLayout page = basePage("隐私");
+        addToggleRow(page, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
+        addToggleRow(page, "验证码自动填入", "自动填入输入框", "sms_fill", false);
+        addToggleRow(page, "隐藏 Xposed/Root", "基础防检测", "hide_enable", true);
+        contentArea.addView(page);
     }
 
     private void buildSettingsPage() {
+        LinearLayout page = basePage("设置");
+        addActionRow(page, "软重启 Zygote", "快速重新加载模块");
+        addActionRow(page, "重启 SystemUI", "重新加载状态栏");
+        contentArea.addView(page);
+    }
+
+    private LinearLayout basePage(String titleText) {
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
         page.setPadding(16, 20, 16, 16);
         TextView title = new TextView(this);
-        title.setText("设置");
-        title.setTextSize(20);
+        title.setText(titleText);
+        title.setTextSize(22);
         title.setTextColor(Color.WHITE);
+        title.setPadding(0, 0, 0, 16);
         page.addView(title);
-
-        addToggleRow(page, "呼吸模式", "彩虹颜色缓慢流动", "rainbow_breath", false);
-        addToggleRow(page, "状态栏彩虹色", "系统状态栏时间与图标", "rainbow_enable", true);
-        addToggleRow(page, "液态玻璃", "App 磨砂玻璃背景", "glass_enable", true);
-        contentArea.addView(page);
+        return page;
     }
 
     private void addToggleRow(LinearLayout parent, String label, String desc, String key, boolean def) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(14, 12, 14, 12);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.argb(90, 255, 255, 255));
-        bg.setCornerRadius(16);
-        row.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 8, 0, 0);
-        row.setLayoutParams(lp);
+        LinearLayout row = glassRow();
         LinearLayout textBox = new LinearLayout(this);
         textBox.setOrientation(LinearLayout.VERTICAL);
         textBox.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -237,23 +187,36 @@ public class MainActivity extends Activity {
         parent.addView(row);
     }
 
-    private void addCard(LinearLayout parent, String title, String desc, boolean enabled) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.HORIZONTAL);
-        card.setPadding(16, 14, 16, 14);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.argb(100, 255, 255, 255));
-        bg.setCornerRadius(20);
-        card.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, 12);
-        card.setLayoutParams(lp);
+    private void addSeekRow(LinearLayout parent, String label, int min, int max, String key, int def) {
+        LinearLayout row = glassRow();
+        row.setOrientation(LinearLayout.VERTICAL);
+        TextView t = new TextView(this);
+        t.setText(label + "：" + sp.getInt(key, def));
+        t.setTextSize(15);
+        t.setTextColor(Color.WHITE);
+        row.addView(t);
+        SeekBar bar = new SeekBar(this);
+        bar.setMax(max - min);
+        bar.setProgress(sp.getInt(key, def) - min);
+        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
+                t.setText(label + "：" + (p + min));
+                if (fromUser) sp.edit().putInt(key, p + min).apply();
+            }
+            @Override public void onStartTrackingTouch(SeekBar s) {}
+            @Override public void onStopTrackingTouch(SeekBar s) {}
+        });
+        row.addView(bar);
+        parent.addView(row);
+    }
+
+    private void addActionRow(LinearLayout parent, String label, String desc) {
+        LinearLayout row = glassRow();
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         TextView t = new TextView(this);
-        t.setText(title);
+        t.setText(label);
         t.setTextSize(16);
         t.setTextColor(Color.WHITE);
         TextView d = new TextView(this);
@@ -262,17 +225,27 @@ public class MainActivity extends Activity {
         d.setTextColor(Color.parseColor("#8899AA"));
         box.addView(t);
         box.addView(d);
-        card.addView(box);
-        TextView badge = new TextView(this);
-        badge.setText(enabled ? "ON" : "OFF");
-        badge.setTextSize(12);
-        badge.setTextColor(enabled ? Color.WHITE : Color.parseColor("#667788"));
-        card.addView(badge);
-        parent.addView(card);
+        row.addView(box);
+        TextView arrow = new TextView(this);
+        arrow.setText(">");
+        arrow.setTextSize(16);
+        arrow.setTextColor(Color.parseColor("#8899AA"));
+        row.addView(arrow);
+        parent.addView(row);
     }
 
-    private int getRainbowColor() {
-        float hue = (System.currentTimeMillis() / 16) % 360;
-        return Color.HSVToColor(255, new float[]{hue, 0.7f, 1.0f});
+    private LinearLayout glassRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(14, 12, 14, 12);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Color.argb(90, 255, 255, 255));
+        bg.setCornerRadius(16);
+        row.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, 10);
+        row.setLayoutParams(lp);
+        return row;
     }
 }
