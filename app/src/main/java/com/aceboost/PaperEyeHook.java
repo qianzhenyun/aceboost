@@ -6,6 +6,7 @@ import android.graphics.Paint;
 import android.view.View;
 import de.robv.android.xposed.*;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import java.lang.reflect.Method;
 
 public class PaperEyeHook {
     private static final ColorMatrix GRAYSCALE = new ColorMatrix();
@@ -22,20 +23,33 @@ public class PaperEyeHook {
             final Paint paint = new Paint();
             paint.setColorFilter(new ColorMatrixColorFilter(GRAYSCALE));
 
-            XposedHelpers.findAndHookMethod("android.view.ViewRootImpl", lp.classLoader,
-                "setView", View.class, int.class, int.class, new XC_MethodHook() {
+            Class<?> vri = XposedHelpers.findClass("android.view.ViewRootImpl", lp.classLoader);
+            int hooked = 0;
+            for (Method m : vri.getDeclaredMethods()) {
+                if (!"setView".equals(m.getName())) {
+                    continue;
+                }
+                Class<?>[] ps = m.getParameterTypes();
+                if (ps.length == 0 || ps[0] != View.class) {
+                    continue;
+                }
+                XposedBridge.hookMethod(m, new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         try {
-                            View root = (View) param.args[0];
-                            if (root != null) {
-                                root.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+                            if (param.args.length > 0 && param.args[0] instanceof View) {
+                                View root = (View) param.args[0];
+                                if (root != null) {
+                                    root.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
+                                }
                             }
                         } catch (Throwable ignored) {}
                     }
                 });
+                hooked++;
+            }
 
-            LogUtil.log("PaperEyeHook hooked ViewRootImpl for " + lp.packageName);
+            LogUtil.log("PaperEyeHook hooked setView x" + hooked + " for " + lp.packageName);
         } catch (Throwable t) {
             LogUtil.error("PaperEyeHook failed", t);
         }
