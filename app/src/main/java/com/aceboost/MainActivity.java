@@ -3,276 +3,200 @@ package com.aceboost;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.*;
 
 public class MainActivity extends Activity {
     private SharedPreferences sp;
     private FrameLayout contentArea;
-    private float density;
+    private float d;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreate(Bundle b) {
+        super.onCreate(b);
         try {
             sp = getSharedPreferences("aceboost_prefs", MODE_PRIVATE);
-            density = getResources().getDisplayMetrics().density;
-
+            d = getResources().getDisplayMetrics().density;
             LinearLayout root = new LinearLayout(this);
             root.setOrientation(LinearLayout.VERTICAL);
-            root.setBackgroundColor(Color.parseColor("#070A0F"));
-
+            root.setBackgroundColor(Color.parseColor("#0F141A"));
             contentArea = new FrameLayout(this);
-            contentArea.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+            contentArea.setLayoutParams(new LinearLayout.LayoutParams(-1, 0, 1f));
             root.addView(contentArea);
-
             LiquidGlassNavBar nav = new LiquidGlassNavBar(this, this::switchTab);
-            nav.setLayoutParams(new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, dp(72)));
+            nav.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(72)));
             root.addView(nav);
-
             setContentView(root);
             switchTab(0);
         } catch (Throwable t) {
-            TextView err = new TextView(this);
-            err.setText("页面加载失败：" + t);
-            err.setTextColor(Color.WHITE);
-            err.setTextSize(14);
-            err.setPadding(dp(24), dp(24), dp(24), dp(24));
-            setContentView(err);
+            TextView e = new TextView(this);
+            e.setText("加载失败：" + t);
+            e.setTextColor(Color.WHITE);
+            e.setTextSize(14);
+            e.setPadding(dp(24), dp(24), dp(24), dp(24));
+            setContentView(e);
         }
     }
 
-    private void switchTab(int index) {
+    private void switchTab(int i) {
         contentArea.removeAllViews();
-        if (index == 0) buildSystemPage();
-        else if (index == 1) buildAppPage();
-        else buildSelfPage();
+        if (i == 0) system(); else if (i == 1) app(); else self();
     }
 
-    private void buildSystemPage() {
-        LinearLayout page = basePage("手机系统功能", "音频与显示增强");
-        addCard(page, "🎵", "采样率优化", "目标采样率 192000 Hz", "audio_enable", true);
-        addCard(page, "📳", "振动增强", "提升振动反馈强度", "vibrate_enable", true);
-        addSliderCard(page, "振动强度", "100% ~ 200%", "vibrate_level", 160, 100, 200);
-        addCard(page, "🖥️", "防烧屏", "保护 OLED 屏幕", "burnin_enable", true);
-        contentArea.addView(page);
+    private void system() {
+        contentArea.addView(page("手机系统功能", "音频与显示增强", p -> {
+            toggle(p, "采样率优化", "目标采样率 192000 Hz", "audio_enable", true);
+            toggle(p, "振动增强", "提升振动反馈强度", "vibrate_enable", true);
+            slider(p, "振动强度", "100% - 200%", "vibrate_level", 160, 100, 200);
+            toggle(p, "防烧屏", "保护 OLED 屏幕", "burnin_enable", true);
+        }));
     }
 
-    private void buildAppPage() {
-        LinearLayout page = basePage("手机应用功能", "验证码与自动化");
-        addCard(page, "📋", "验证码自动复制", "自动复制到剪贴板", "sms_copy", true);
-        addCard(page, "✍️", "验证码自动填充", "自动填入输入框", "sms_fill", false);
-        contentArea.addView(page);
+    private void app() {
+        contentArea.addView(page("手机应用功能", "验证码与自动化", p -> {
+            toggle(p, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
+            toggle(p, "验证码自动填充", "自动填入输入框", "sms_fill", false);
+        }));
     }
 
-    private void buildSelfPage() {
-        LinearLayout page = basePage("本APP设置", "模块与系统控制");
-        addCard(page, "🛡️", "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
-        addActionCard(page, "🔁", "软重启 Zygote", "快速重新加载模块", () -> execRoot("setprop ctl.restart zygote"));
-        addActionCard(page, "🔄", "重启 SystemUI", "重新加载状态栏", () -> execRoot("pkill -f com.android.systemui"));
-        contentArea.addView(page);
+    private void self() {
+        contentArea.addView(page("本APP设置", "模块与系统控制", p -> {
+            toggle(p, "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
+            action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("setprop ctl.restart zygote"));
+            action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("pkill -f com.android.systemui"));
+        }));
     }
 
-    private LinearLayout basePage(String titleText, String subtitleText) {
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        LinearLayout page = new LinearLayout(this);
-        page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(18), dp(22), dp(18), dp(18));
+    interface B { void b(LinearLayout p); }
 
-        TextView title = new TextView(this);
-        title.setText(titleText);
-        title.setTextSize(24);
-        title.setTextColor(Color.WHITE);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setPadding(0, 0, 0, dp(4));
-        page.addView(title);
-
-        TextView subtitle = new TextView(this);
-        subtitle.setText(subtitleText);
-        subtitle.setTextSize(13);
-        subtitle.setTextColor(Color.parseColor("#93A0B4"));
-        subtitle.setPadding(0, 0, 0, dp(18));
-        page.addView(subtitle);
-
-        scroll.addView(page, new ScrollView.LayoutParams(
-                ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
-
-        LinearLayout wrapper = new LinearLayout(this);
-        wrapper.setOrientation(LinearLayout.VERTICAL);
-        wrapper.addView(scroll, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
-        return wrapper;
-    }
-
-    private void addCard(LinearLayout parent, String icon, String label, String desc, String key, boolean def) {
-        LinearLayout row = glassCard();
-
-        TextView iconView = new TextView(this);
-        iconView.setText(icon);
-        iconView.setTextSize(22);
-        iconView.setGravity(Gravity.CENTER);
-        iconView.setPadding(0, 0, dp(12), 0);
-        row.addView(iconView);
-
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+    private View page(String t1, String t2, B builder) {
+        ScrollView s = new ScrollView(this);
+        s.setFillViewport(true);
+        LinearLayout p = new LinearLayout(this);
+        p.setOrientation(LinearLayout.VERTICAL);
+        p.setPadding(dp(20), dp(24), dp(20), dp(20));
         TextView t = new TextView(this);
-        t.setText(label);
-        t.setTextSize(16);
+        t.setText(t1);
+        t.setTextSize(24);
         t.setTextColor(Color.WHITE);
-        t.setTypeface(null, android.graphics.Typeface.BOLD);
-        TextView d = new TextView(this);
-        d.setText(desc);
-        d.setTextSize(12);
-        d.setTextColor(Color.parseColor("#8A97AA"));
-        d.setPadding(0, dp(3), 0, 0);
-        box.addView(t);
-        box.addView(d);
-        row.addView(box);
-
-        Switch sw = new Switch(this);
-        sw.setChecked(sp.getBoolean(key, def));
-        sw.setOnCheckedChangeListener((v, c) -> sp.edit().putBoolean(key, c).apply());
-        row.addView(sw);
-        parent.addView(row);
+        t.setTypeface(null, Typeface.BOLD);
+        p.addView(t);
+        TextView st = new TextView(this);
+        st.setText(t2);
+        st.setTextSize(13);
+        st.setTextColor(Color.parseColor("#8A97AA"));
+        st.setPadding(0, dp(4), 0, dp(20));
+        p.addView(st);
+        builder.b(p);
+        s.addView(p);
+        return s;
     }
 
-    private void addSliderCard(LinearLayout parent, String label, String rangeText, String key, int def, int min, int max) {
-        LinearLayout row = glassCard();
-        row.setOrientation(LinearLayout.VERTICAL);
-
-        LinearLayout head = new LinearLayout(this);
-        head.setOrientation(LinearLayout.HORIZONTAL);
-        head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView iconView = new TextView(this);
-        iconView.setText("🎚️");
-        iconView.setTextSize(22);
-        iconView.setPadding(0, 0, dp(12), 0);
-        head.addView(iconView);
-
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        TextView t = new TextView(this);
-        t.setText(label);
-        t.setTextSize(16);
-        t.setTextColor(Color.WHITE);
-        t.setTypeface(null, android.graphics.Typeface.BOLD);
-        TextView d = new TextView(this);
-        d.setText(rangeText);
-        d.setTextSize(12);
-        d.setTextColor(Color.parseColor("#8A97AA"));
-        d.setPadding(0, dp(3), 0, 0);
-        box.addView(t);
-        box.addView(d);
-        head.addView(box);
-
-        int current = sp.getInt(key, def);
-        TextView val = new TextView(this);
-        val.setText(current + "%");
-        val.setTextSize(16);
-        val.setTextColor(Color.parseColor("#4DA3FF"));
-        val.setTypeface(null, android.graphics.Typeface.BOLD);
-        head.addView(val);
-        row.addView(head);
-
-        SeekBar bar = new SeekBar(this);
-        bar.setMax(max - min);
-        bar.setProgress(current - min);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        blp.setMargins(0, dp(8), 0, 0);
-        bar.setLayoutParams(blp);
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean fromUser) {
-                int v = p + min;
-                val.setText(v + "%");
-                if (fromUser) sp.edit().putInt(key, v).apply();
-            }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) {}
-        });
-        row.addView(bar);
-        parent.addView(row);
-    }
-
-    private void addActionCard(LinearLayout parent, String icon, String label, String desc, Runnable action) {
-        LinearLayout row = glassCard();
-
-        TextView iconView = new TextView(this);
-        iconView.setText(icon);
-        iconView.setTextSize(22);
-        iconView.setGravity(Gravity.CENTER);
-        iconView.setPadding(0, 0, dp(12), 0);
-        row.addView(iconView);
-
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        TextView t = new TextView(this);
-        t.setText(label);
-        t.setTextSize(16);
-        t.setTextColor(Color.WHITE);
-        t.setTypeface(null, android.graphics.Typeface.BOLD);
-        TextView d = new TextView(this);
-        d.setText(desc);
-        d.setTextSize(12);
-        d.setTextColor(Color.parseColor("#8A97AA"));
-        d.setPadding(0, dp(3), 0, 0);
-        box.addView(t);
-        box.addView(d);
-        row.addView(box);
-
-        TextView arrow = new TextView(this);
-        arrow.setText("›");
-        arrow.setTextSize(26);
-        arrow.setTextColor(Color.parseColor("#8A97AA"));
-        row.addView(arrow);
-        row.setOnClickListener(v -> { if (action != null) action.run(); });
-        parent.addView(row);
-    }
-
-    private LinearLayout glassCard() {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(16), dp(14), dp(16), dp(14));
+    private LinearLayout row() {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.HORIZONTAL);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        r.setPadding(dp(16), dp(14), dp(16), dp(14));
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.argb(42, 255, 255, 255));
-        bg.setCornerRadius(dp(20));
+        bg.setColor(Color.argb(40, 255, 255, 255));
+        bg.setCornerRadius(dp(18));
         bg.setStroke(1, Color.argb(30, 255, 255, 255));
-        row.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        r.setBackground(bg);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, dp(12));
-        row.setLayoutParams(lp);
-        return row;
+        r.setLayoutParams(lp);
+        return r;
     }
 
-    private void toast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    private LinearLayout box(String a, String b) {
+        LinearLayout x = new LinearLayout(this);
+        x.setOrientation(LinearLayout.VERTICAL);
+        x.setLayoutParams(new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView t = new TextView(this);
+        t.setText(a);
+        t.setTextSize(16);
+        t.setTextColor(Color.WHITE);
+        t.setTypeface(null, Typeface.BOLD);
+        TextView d = new TextView(this);
+        d.setText(b);
+        d.setTextSize(12);
+        d.setTextColor(Color.parseColor("#758398"));
+        d.setPadding(0, dp(3), 0, 0);
+        x.addView(t);
+        x.addView(d);
+        return x;
     }
 
-    private void execRoot(String cmd) {
+    private void toggle(LinearLayout p, String a, String b, String k, boolean def) {
+        LinearLayout r = row();
+        Switch sw = new Switch(this);
+        sw.setChecked(sp.getBoolean(k, def));
+        sw.setOnCheckedChangeListener((v, c) -> sp.edit().putBoolean(k, c).apply());
+        r.addView(box(a, b));
+        r.addView(sw);
+        p.addView(r);
+    }
+
+    private void slider(LinearLayout p, String a, String b, String k, int def, int min, int max) {
+        LinearLayout r = row();
+        r.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout h = new LinearLayout(this);
+        h.setOrientation(LinearLayout.HORIZONTAL);
+        h.setGravity(Gravity.CENTER_VERTICAL);
+        int cur = sp.getInt(k, def);
+        TextView v = new TextView(this);
+        v.setText(cur + "%");
+        v.setTextSize(15);
+        v.setTextColor(Color.parseColor("#6E8BFF"));
+        v.setTypeface(null, Typeface.BOLD);
+        h.addView(box(a, b));
+        h.addView(v);
+        r.addView(h);
+        SeekBar sb = new SeekBar(this);
+        sb.setMax(max - min);
+        sb.setProgress(cur - min);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, dp(10), 0, 0);
+        sb.setLayoutParams(lp);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            public void onProgressChanged(SeekBar s, int x, boolean fromUser) {
+                int val = x + min;
+                v.setText(val + "%");
+                if (fromUser) sp.edit().putInt(k, val).apply();
+            }
+            public void onStartTrackingTouch(SeekBar s) {}
+            public void onStopTrackingTouch(SeekBar s) {}
+        });
+        r.addView(sb);
+        p.addView(r);
+    }
+
+    private void action(LinearLayout p, String a, String b, Runnable run) {
+        LinearLayout r = row();
+        TextView ar = new TextView(this);
+        ar.setText(">");
+        ar.setTextSize(26);
+        ar.setTextColor(Color.parseColor("#5C6B80"));
+        r.addView(box(a, b));
+        r.addView(ar);
+        r.setOnClickListener(v -> run.run());
+        p.addView(r);
+    }
+
+    private void exec(String cmd) {
         new Thread(() -> {
             try {
                 Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
                 p.waitFor();
-                runOnUiThread(() -> toast("执行完成"));
+                runOnUiThread(() -> Toast.makeText(this, "执行完成", Toast.LENGTH_SHORT).show());
             } catch (Throwable t) {
-                runOnUiThread(() -> toast("执行失败：" + t.getMessage()));
+                runOnUiThread(() -> Toast.makeText(this, "执行失败：" + t.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
 
-    private int dp(int v) {
-        return Math.round(v * density);
-    }
+    private int dp(int v) { return Math.round(v * d); }
 }
