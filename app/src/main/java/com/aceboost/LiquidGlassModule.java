@@ -64,7 +64,10 @@ public class LiquidGlassModule {
                     Object arg0 = param.args[0];
                     if (arg0 instanceof Activity) {
                         Activity activity = (Activity) arg0;
-                        if (app.launcherActivity.equals(activity.getClass().getName())) {
+                        boolean candidate = (app.launcherActivity == null
+                                || app.launcherActivity.isEmpty()
+                                || app.launcherActivity.equals(activity.getClass().getName()));
+                        if (candidate) {
                             GlassConfig.load(activity);
                             sResumeHits++;
                             if (sResumeHits <= 3 || sResumeHits % 20 == 0) {
