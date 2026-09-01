@@ -16,6 +16,7 @@ public class ModuleMain implements IXposedHookLoadPackage {
                 VerificationCodeHook.hook(lp);
             }
             ScreenBurnHook.hook(lp);
+            VideoCapabilityHook.hook(lp);
         } catch (Throwable t) {
             XposedBridge.log("AceBoost ModuleMain error: " + t);
         }
