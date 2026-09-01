@@ -48,11 +48,12 @@ public class MainActivity extends Activity {
     }
 
     private void system() {
-        contentArea.addView(page("手机系统功能", "音频与显示增强", p -> {
+        contentArea.addView(page("手机系统功能", "音频、显示与系统增强", p -> {
             toggle(p, "采样率优化", "目标采样率 192000 Hz", "audio_enable", true);
             toggle(p, "振动增强", "提升振动反馈强度", "vibrate_enable", true);
             slider(p, "振动强度", "100% - 200%", "vibrate_level", 160, 100, 200);
             toggle(p, "防烧屏", "保护 OLED 屏幕", "burnin_enable", true);
+            toggle(p, "4K 视频解码", "解锁 4K 分辨率播放", "video_4k_enable", false);
         }));
     }
 
@@ -66,8 +67,8 @@ public class MainActivity extends Activity {
     private void self() {
         contentArea.addView(page("本APP设置", "模块与系统控制", p -> {
             toggle(p, "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
-            action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("setprop ctl.restart zygote"));
-            action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("pkill -f com.android.systemui"));
+            action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("stop; start"));
+            action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("killall com.android.systemui"));
         }));
     }
 
@@ -191,8 +192,8 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
-                p.waitFor();
-                runOnUiThread(() -> Toast.makeText(this, "执行完成", Toast.LENGTH_SHORT).show());
+                int code = p.waitFor();
+                runOnUiThread(() -> Toast.makeText(this, code == 0 ? "执行完成" : "执行失败，请检查 Root 权限", Toast.LENGTH_SHORT).show());
             } catch (Throwable t) {
                 runOnUiThread(() -> Toast.makeText(this, "执行失败：" + t.getMessage(), Toast.LENGTH_SHORT).show());
             }
