@@ -63,13 +63,13 @@ public class MainActivity extends Activity {
         contentArea.addView(page("手机应用功能", "验证码、自动化与液态玻璃", p -> {
             toggle(p, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
             toggle(p, "验证码自动填充", "自动填入输入框", "sms_fill", false);
-            toggle(p, "液态玻璃", "微信 \/ QQ 底栏液态玻璃", "liquid_glass_enable", false);
+            toggle(p, "液态玻璃", "微信 / QQ / 短视频底栏液态玻璃", "liquid_glass_enable", false);
         }));
     }
 
     private void self() {
         contentArea.addView(page("本APP设置", "模块与系统控制", p -> {
-            toggle(p, "隐藏 Xposed\/Root", "基础检测隐藏", "hide_enable", true);
+            toggle(p, "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
             action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("stop; sleep 1; start"));
             action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("killall com.android.systemui"));
         }));
