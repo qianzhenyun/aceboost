@@ -5,15 +5,11 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.view.Gravity;
 import android.widget.*;
 
 public class MainActivity extends Activity {
     private SharedPreferences sp;
     private FrameLayout contentArea;
-    private LinearLayout navBar;
-    private TextView tabSystem, tabApp, tabSelf;
-    private int currentTab = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,22 +26,10 @@ public class MainActivity extends Activity {
                     LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
             root.addView(contentArea);
 
-            navBar = new LinearLayout(this);
-            navBar.setOrientation(LinearLayout.HORIZONTAL);
-            navBar.setPadding(8, 10, 8, 16);
-            GradientDrawable navBg = new GradientDrawable();
-            navBg.setColor(Color.argb(150, 28, 36, 48));
-            navBg.setCornerRadius(22);
-            navBg.setStroke(1, Color.argb(50, 255, 255, 255));
-            navBar.setBackground(navBg);
-            root.addView(navBar);
-
-            tabSystem = createTab("手机系统功能", 0);
-            tabApp = createTab("手机应用功能", 1);
-            tabSelf = createTab("本APP设置", 2);
-            navBar.addView(tabSystem);
-            navBar.addView(tabApp);
-            navBar.addView(tabSelf);
+            LiquidGlassNavBar nav = new LiquidGlassNavBar(this, index -> switchTab(index));
+            nav.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+            root.addView(nav);
 
             switchTab(0);
             setContentView(root);
@@ -59,38 +43,17 @@ public class MainActivity extends Activity {
         }
     }
 
-    private TextView createTab(String label, final int index) {
-        TextView tv = new TextView(this);
-        tv.setText(label);
-        tv.setTextSize(13);
-        tv.setGravity(Gravity.CENTER);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(0, 64, 1f));
-        tv.setOnClickListener(v -> switchTab(index));
-        return tv;
-    }
-
     private void switchTab(int index) {
-        currentTab = index;
         contentArea.removeAllViews();
         switch (index) {
             case 0: buildSystemPage(); break;
             case 1: buildAppPage(); break;
             default: buildSelfPage(); break;
         }
-        updateTabColors();
-    }
-
-    private void updateTabColors() {
-        tabSystem.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabApp.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabSelf.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#93A0B4"));
     }
 
     private void buildSystemPage() {
         LinearLayout page = basePage("手机系统功能");
-        addToggleRow(page, "音量增强", "音量级进 + 最大音量上浮", "vol_enable", true);
-        addSeekRow(page, "音量级数", 30, 100, "vol_steps", 60);
-        addSeekRow(page, "最大音量上限", 150, 255, "vol_max", 201);
         addToggleRow(page, "采样率优化", "目标采样率 192000Hz", "audio_enable", true);
         addToggleRow(page, "振动增强", "振动强度提升", "vibrate_enable", true);
         addSeekRow(page, "振动强度 (%)", 100, 200, "vibrate_level", 160);
