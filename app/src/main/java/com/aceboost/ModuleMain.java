@@ -12,8 +12,6 @@ public class ModuleMain implements IXposedHookLoadPackage {
                 AudioHook.hook(lp);
                 VibrationHook.hook(lp);
                 AntiDetectionHook.hook(lp);
-            } else if (lp.packageName.equals("com.android.systemui")) {
-                StatusBarColorHook.hook(lp);
             } else if (lp.packageName.equals("com.android.mms") || lp.packageName.equals("com.google.android.apps.messaging")) {
                 VerificationCodeHook.hook(lp);
             }
