@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
             slider(p, "振动强度", "100% - 200%", "vibrate_level", 160, 100, 200);
             toggle(p, "防烧屏", "保护 OLED 屏幕", "burnin_enable", true);
             toggle(p, "4K 视频解码", "解锁 4K 分辨率播放", "video_4k_enable", false);
+            toggle(p, "全局灰阶墨水屏", "模拟纸张观感，去彩色护眼", "paper_eye_enable", false);
         }));
     }
 
@@ -62,13 +63,13 @@ public class MainActivity extends Activity {
         contentArea.addView(page("手机应用功能", "验证码、自动化与液态玻璃", p -> {
             toggle(p, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
             toggle(p, "验证码自动填充", "自动填入输入框", "sms_fill", false);
-            toggle(p, "液态玻璃", "微信 / QQ 底栏液态玻璃", "liquid_glass_enable", false);
+            toggle(p, "液态玻璃", "微信 \/ QQ 底栏液态玻璃", "liquid_glass_enable", false);
         }));
     }
 
     private void self() {
         contentArea.addView(page("本APP设置", "模块与系统控制", p -> {
-            toggle(p, "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
+            toggle(p, "隐藏 Xposed\/Root", "基础检测隐藏", "hide_enable", true);
             action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("stop; sleep 1; start"));
             action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("killall com.android.systemui"));
         }));
