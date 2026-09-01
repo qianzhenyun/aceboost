@@ -10,7 +10,7 @@ public class ModuleMain implements IXposedHookLoadPackage {
         try {
             String pkg = lp.packageName;
             if (pkg.equals("com.tencent.mm") || pkg.equals("com.tencent.mobileqq")) {
-                boolean enabled = PrefsReader.getBool("liquid_glass_enable", false);
+                boolean enabled = PrefsReader.getBool("liquid_glass_enable", true);
                 XposedBridge.log("AceBoost LG branch pkg=" + pkg + " enabled=" + enabled);
                 if (enabled) {
                     HostApp app = HostApp.forPackage(pkg);
