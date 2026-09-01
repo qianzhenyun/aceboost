@@ -9,6 +9,13 @@ public class ModuleMain implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lp) {
         try {
             String pkg = lp.packageName;
+
+            // 微信/QQ 只在主进程注入液态玻璃；子进程直接跳过，避免重复 Hook 导致卡顿。
+            if ((pkg.equals("com.tencent.mm") || pkg.equals("com.tencent.mobileqq"))
+                    && !lp.processName.equals(pkg)) {
+                return;
+            }
+
             if (pkg.equals("com.tencent.mm") || pkg.equals("com.tencent.mobileqq")) {
                 boolean enabled = PrefsReader.getBool("liquid_glass_enable", true);
                 XposedBridge.log("AceBoost LG branch pkg=" + pkg + " enabled=" + enabled);
