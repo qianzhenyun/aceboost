@@ -10,24 +10,25 @@ public class ModuleMain implements IXposedHookLoadPackage {
         try {
             String pkg = lp.packageName;
 
-            // 微信/QQ 只在主进程注入液态玻璃；子进程直接跳过，避免重复 Hook 导致卡顿。
-            if ((pkg.equals("com.tencent.mm") || pkg.equals("com.tencent.mobileqq"))
-                    && !lp.processName.equals(pkg)) {
+            // 全局灰阶墨水屏需要在所有目标进程生效，包括微信/QQ 子进程，
+            // 所以必须在子进程 early return 之前注册。
+            PaperEyeHook.hook(lp);
+
+            HostApp targetApp = HostApp.forPackage(pkg);
+            boolean isSupported = targetApp != null;
+
+            // 已支持应用只在主进程注入液态玻璃；子进程直接跳过，避免重复 Hook。
+            if (isSupported && !lp.processName.equals(pkg)) {
                 return;
             }
 
-            if (pkg.equals("com.tencent.mm") || pkg.equals("com.tencent.mobileqq")) {
+            if (isSupported) {
                 boolean enabled = PrefsReader.getBool("liquid_glass_enable", true);
                 XposedBridge.log("AceBoost LG branch pkg=" + pkg + " enabled=" + enabled);
                 if (enabled) {
-                    HostApp app = HostApp.forPackage(pkg);
-                    if (app != null) {
-                        LiquidGlassModule.setApp(app);
-                        LiquidGlassModule.install(lp.classLoader);
-                        XposedBridge.log("AceBoost LG install called for " + pkg);
-                    } else {
-                        XposedBridge.log("AceBoost LG HostApp null for " + pkg);
-                    }
+                    LiquidGlassModule.setApp(targetApp);
+                    LiquidGlassModule.install(lp.classLoader);
+                    XposedBridge.log("AceBoost LG install called for " + pkg);
                 }
             }
 
