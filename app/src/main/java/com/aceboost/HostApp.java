@@ -71,8 +71,31 @@ final class HostApp {
             false,
             "com.kuaishou.nebula.");
 
+    static final HostApp HONGGUO_MANJU = new HostApp(
+            "com.kylin.read",
+            "",
+            new String[0],
+            new String[0],
+            "",
+            new String[0],
+            new String[0],
+            false,
+            "com.kylin.read.");
+
+    static final HostApp HONGGUO_DUANJU = new HostApp(
+            "com.phoenix.read",
+            "",
+            new String[0],
+            new String[0],
+            "",
+            new String[0],
+            new String[0],
+            false,
+            "com.phoenix.read.");
+
     private static final HostApp[] ALL = {
-            WECHAT, QQ, DOUYIN, DOUYIN_LITE, KUAISHOU, KUAISHOU_NEBULA
+            WECHAT, QQ, DOUYIN, DOUYIN_LITE, KUAISHOU, KUAISHOU_NEBULA,
+            HONGGUO_MANJU, HONGGUO_DUANJU
     };
 
     final String pkg;
