@@ -49,7 +49,8 @@ public class MainActivity extends Activity {
 
     private void system() {
         contentArea.addView(page("手机系统功能", "音频、显示与系统增强", p -> {
-            toggle(p, "采样率优化", "目标采样率 192000 Hz", "audio_enable", true);
+            toggle(p, "音量增强", "解锁更高媒体音量与更多档位", "vol_enable", true);
+            numberSlider(p, "音量上限", "系统最大音量值", "vol_max", 201, 100, 300);
             toggle(p, "振动增强", "提升振动反馈强度", "vibrate_enable", true);
             slider(p, "振动强度", "100% - 200%", "vibrate_level", 160, 100, 200);
             toggle(p, "防烧屏", "保护 OLED 屏幕", "burnin_enable", true);
@@ -58,9 +59,10 @@ public class MainActivity extends Activity {
     }
 
     private void app() {
-        contentArea.addView(page("手机应用功能", "验证码与自动化", p -> {
+        contentArea.addView(page("手机应用功能", "验证码、自动化与液态玻璃", p -> {
             toggle(p, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
             toggle(p, "验证码自动填充", "自动填入输入框", "sms_fill", false);
+            toggle(p, "液态玻璃", "微信 / QQ 底栏液态玻璃", "liquid_glass_enable", false);
         }));
     }
 
@@ -143,6 +145,14 @@ public class MainActivity extends Activity {
     }
 
     private void slider(LinearLayout p, String a, String b, String k, int def, int min, int max) {
+        valueSlider(p, a, b, k, def, min, max, "%");
+    }
+
+    private void numberSlider(LinearLayout p, String a, String b, String k, int def, int min, int max) {
+        valueSlider(p, a, b, k, def, min, max, "");
+    }
+
+    private void valueSlider(LinearLayout p, String a, String b, String k, int def, int min, int max, String suffix) {
         LinearLayout r = row();
         r.setOrientation(LinearLayout.VERTICAL);
         LinearLayout h = new LinearLayout(this);
@@ -150,7 +160,7 @@ public class MainActivity extends Activity {
         h.setGravity(Gravity.CENTER_VERTICAL);
         int cur = sp.getInt(k, def);
         TextView v = new TextView(this);
-        v.setText(cur + "%");
+        v.setText(cur + suffix);
         v.setTextSize(15);
         v.setTextColor(Color.parseColor("#6E8BFF"));
         v.setTypeface(null, Typeface.BOLD);
@@ -166,7 +176,7 @@ public class MainActivity extends Activity {
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar s, int x, boolean fromUser) {
                 int val = x + min;
-                v.setText(val + "%");
+                v.setText(val + suffix);
                 if (fromUser) sp.edit().putInt(k, val).apply();
             }
             public void onStartTrackingTouch(SeekBar s) {}
