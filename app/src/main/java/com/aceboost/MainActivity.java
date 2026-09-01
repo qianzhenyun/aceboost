@@ -67,7 +67,7 @@ public class MainActivity extends Activity {
     private void self() {
         contentArea.addView(page("本APP设置", "模块与系统控制", p -> {
             toggle(p, "隐藏 Xposed/Root", "基础检测隐藏", "hide_enable", true);
-            action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("stop; start"));
+            action(p, "软重启 Zygote", "快速重新加载模块", () -> exec("stop; sleep 1; start"));
             action(p, "重启 SystemUI", "重新加载状态栏", () -> exec("killall com.android.systemui"));
         }));
     }
@@ -192,10 +192,22 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             try {
                 Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
+                java.io.InputStream is = p.getInputStream();
+                java.io.InputStream es = p.getErrorStream();
+                StringBuilder out = new StringBuilder();
+                byte[] buf = new byte[512];
+                int n;
+                while ((n = is.read(buf)) > 0) out.append(new String(buf, 0, n));
+                StringBuilder err = new StringBuilder();
+                while ((n = es.read(buf)) > 0) err.append(new String(buf, 0, n));
                 int code = p.waitFor();
-                runOnUiThread(() -> Toast.makeText(this, code == 0 ? "执行完成" : "执行失败，请检查 Root 权限", Toast.LENGTH_SHORT).show());
+                String msg;
+                if (code == 0 && err.length() == 0) msg = "执行完成";
+                else if (err.length() > 0) msg = "错误：" + err.toString().trim();
+                else msg = "失败 code=" + code + " " + out.toString().trim();
+                runOnUiThread(() -> Toast.makeText(this, msg, Toast.LENGTH_LONG).show());
             } catch (Throwable t) {
-                runOnUiThread(() -> Toast.makeText(this, "执行失败：" + t.getMessage(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this, "执行异常：" + t.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
     }
