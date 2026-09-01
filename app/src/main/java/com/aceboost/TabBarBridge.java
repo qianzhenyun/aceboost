@@ -495,7 +495,7 @@ final class TabBarBridge {
                     if (chain.getThisObject() != LiquidGlassInstaller.currentPager()) {
                         return chain.proceed();
                     }
-                    Object[] args = chain.getArgs().toArray();
+                    Object[] args = new Object[]{ chain.getArg(0), chain.getArg(1) };
                     boolean smooth = false;
                     if (args.length >= 2 && args[1] instanceof Boolean) {
                         smooth = (Boolean) args[1];
