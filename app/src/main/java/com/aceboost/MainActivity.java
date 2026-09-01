@@ -12,7 +12,7 @@ public class MainActivity extends Activity {
     private SharedPreferences sp;
     private FrameLayout contentArea;
     private LinearLayout navBar;
-    private TextView tabStatus, tabAudio, tabDisplay, tabPrivacy, tabSettings;
+    private TextView tabSystem, tabApp, tabSelf;
     private int currentTab = 0;
 
     @Override
@@ -40,22 +40,18 @@ public class MainActivity extends Activity {
             navBar.setBackground(navBg);
             root.addView(navBar);
 
-            tabStatus = createTab("状态栏", 0);
-            tabAudio = createTab("音频", 1);
-            tabDisplay = createTab("显示", 2);
-            tabPrivacy = createTab("隐私", 3);
-            tabSettings = createTab("设置", 4);
-            navBar.addView(tabStatus);
-            navBar.addView(tabAudio);
-            navBar.addView(tabDisplay);
-            navBar.addView(tabPrivacy);
-            navBar.addView(tabSettings);
+            tabSystem = createTab("手机系统功能", 0);
+            tabApp = createTab("手机应用功能", 1);
+            tabSelf = createTab("本APP设置", 2);
+            navBar.addView(tabSystem);
+            navBar.addView(tabApp);
+            navBar.addView(tabSelf);
 
             switchTab(0);
             setContentView(root);
         } catch (Throwable t) {
             TextView err = new TextView(this);
-            err.setText("界面加载失败：" + t);
+            err.setText("页面加载失败：" + t);
             err.setTextColor(Color.WHITE);
             err.setTextSize(14);
             err.setPadding(32, 32, 32, 32);
@@ -77,64 +73,43 @@ public class MainActivity extends Activity {
         currentTab = index;
         contentArea.removeAllViews();
         switch (index) {
-            case 0: buildStatusPage(); break;
-            case 1: buildAudioPage(); break;
-            case 2: buildDisplayPage(); break;
-            case 3: buildPrivacyPage(); break;
-            default: buildSettingsPage(); break;
+            case 0: buildSystemPage(); break;
+            case 1: buildAppPage(); break;
+            default: buildSelfPage(); break;
         }
         updateTabColors();
     }
 
     private void updateTabColors() {
-        tabStatus.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabAudio.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabDisplay.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabPrivacy.setTextColor(currentTab == 3 ? Color.WHITE : Color.parseColor("#93A0B4"));
-        tabSettings.setTextColor(currentTab == 4 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabSystem.setTextColor(currentTab == 0 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabApp.setTextColor(currentTab == 1 ? Color.WHITE : Color.parseColor("#93A0B4"));
+        tabSelf.setTextColor(currentTab == 2 ? Color.WHITE : Color.parseColor("#93A0B4"));
     }
 
-    private void buildStatusPage() {
-        LinearLayout page = basePage("状态栏");
-        addToggleRow(page, "彩虹渐变", "状态栏时间与图标使用彩虹色", "rainbow_enable", true);
-        addToggleRow(page, "呼吸模式", "彩虹颜色缓慢流动", "rainbow_breath", false);
-        contentArea.addView(page);
-    }
-
-    private void buildAudioPage() {
-        LinearLayout page = basePage("音频");
-        addToggleRow(page, "音量增强", "音量键步进 + 最大音量上限", "vol_enable", true);
-        addSeekRow(page, "音量步数", 30, 100, "vol_steps", 60);
+    private void buildSystemPage() {
+        LinearLayout page = basePage("手机系统功能");
+        addToggleRow(page, "音量增强", "音量级进 + 最大音量上浮", "vol_enable", true);
+        addSeekRow(page, "音量级数", 30, 100, "vol_steps", 60);
         addSeekRow(page, "最大音量上限", 150, 255, "vol_max", 201);
         addToggleRow(page, "采样率优化", "目标采样率 192000Hz", "audio_enable", true);
-        addToggleRow(page, "马达增强", "振动强度提升", "vibrate_enable", true);
+        addToggleRow(page, "振动增强", "振动强度提升", "vibrate_enable", true);
         addSeekRow(page, "振动强度 (%)", 100, 200, "vibrate_level", 160);
+        addToggleRow(page, "防烧屏", "保护 OLED", "burnin_enable", true);
         contentArea.addView(page);
     }
 
-    private void buildDisplayPage() {
-        LinearLayout page = basePage("显示");
-        addToggleRow(page, "导航栏液态玻璃", "底部导航栏磨砂玻璃效果", "glass_enable", true);
-        addToggleRow(page, "全屏防烧屏", "像素级微移，保护 OLED", "burnin_enable", true);
-        addActionRow(page, "手机软件", "对第三方应用启用液态玻璃", () -> toast("手机软件页面待扩展"));
-        addActionRow(page, "本机应用", "对系统应用启用液态玻璃", () -> toast("本机应用页面待扩展"));
-        contentArea.addView(page);
-    }
-
-    private void buildPrivacyPage() {
-        LinearLayout page = basePage("隐私");
+    private void buildAppPage() {
+        LinearLayout page = basePage("手机应用功能");
         addToggleRow(page, "验证码自动复制", "复制验证码到剪贴板", "sms_copy", true);
-        addToggleRow(page, "验证码自动填入", "自动填入输入框", "sms_fill", false);
-        addToggleRow(page, "隐藏 Xposed/Root", "基础防检测", "hide_enable", true);
+        addToggleRow(page, "验证码自动填充", "自动填入输入框", "sms_fill", false);
         contentArea.addView(page);
     }
 
-    private void buildSettingsPage() {
-        LinearLayout page = basePage("设置");
+    private void buildSelfPage() {
+        LinearLayout page = basePage("本APP设置");
+        addToggleRow(page, "隐藏 Xposed/Root", "基础隐藏检测", "hide_enable", true);
         addActionRow(page, "软重启 Zygote", "快速重新加载模块", () -> execRoot("setprop ctl.restart zygote"));
         addActionRow(page, "重启 SystemUI", "重新加载状态栏", () -> execRoot("pkill -f com.android.systemui"));
-        addActionRow(page, "应用相机增强", "实验性：提升 EIS 防抖强度", () -> CameraEnhance.applyEisBoost(msg -> toast(msg)));
-        addActionRow(page, "恢复相机配置", "恢复原始 EIS 配置", () -> CameraEnhance.restoreEis(msg -> toast(msg)));
         contentArea.addView(page);
     }
 
@@ -218,9 +193,7 @@ public class MainActivity extends Activity {
         arrow.setTextSize(16);
         arrow.setTextColor(Color.parseColor("#93A0B4"));
         row.addView(arrow);
-        row.setOnClickListener(v -> {
-            if (action != null) action.run();
-        });
+        row.setOnClickListener(v -> { if (action != null) action.run(); });
         parent.addView(row);
     }
 
